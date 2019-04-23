@@ -45,7 +45,6 @@ LinearModelL1penalties <-
     }
     
     # Initializing
-    
     n.train <- nrow(X.mat)
     n.features <- ncol(X.mat) # features is p here
     n.penalties <- length(penalty.vec)
