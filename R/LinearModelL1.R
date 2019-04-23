@@ -52,6 +52,15 @@ LinearModelL1 <-
     sigmoid <- function(x) {
       return(1 / 1 + exp(-x))
     }
+    
+    sign <- function(w){
+      if (w > 0)
+        return(1)
+      else if (w = 0)
+        return(0)
+      else 
+        return(-1)
+    }
 
     soft <- function(w, lambda) {
       l <- abs(w) - lambda
@@ -66,18 +75,19 @@ LinearModelL1 <-
       y.vec <- ifelse(y.vec == 0, -1, 1)
     }
     
-    n.features <- ncol(X.scaled.mat)
-    n.trains <- nrow(X.scaled.mat)
+    n.features <- ncol(X.scaled.mat)   # p 
+    n.trains <- nrow(X.scaled.mat)  # n 
 
-    X.train = cbind(1,X.scaled.mat)    
-    w.vec <- rnorm(n.features + 1)
+    X.train <- cbind(1,X.scaled.mat) # n x (p+1)    
+    w.vec <- rnorm(n.features) # p x 1
+    intercept <- rnorm(1)
 
     n.iteration <- 0
     
-    while (norm(abs(W.gradient.vec)) > opt.thresh &&
-           n.iteration <= max.iteration) {
+    while (all(norm(abs(w.gradient.vec)) > opt.thresh, n.iteration <= max.iteration,
+               abs(intercept.gradient) > opt.thresh)) {
       
-      n.iteration = n.iteration + 1
+      n.iteration <- n.iteration + 1
       
       if (is.binary) {
         # do logistic
@@ -91,12 +101,18 @@ LinearModelL1 <-
         w.vec <- c(u.vec[1], soft(u.vec[-1], step.size * penalty))
         
       } else{
-        # do linear
-        w.gradient.vec <- t(X.train)%*%(X.train %*% w.vec - y.vec)
+        # do linear square loss
+        w.gradient.vec <- -t(X.train) %*% 
+          (X.train %*% w.vec + rep(1,n.trains) * intercept - y.vec)
         
-        u.vec <- w.vec - step.size * w.gradient.vec
+        intercept.gradient <- -t(rep(1,n.trains)) %*% 
+          (X.train %*% w.vec + rep(1,n.trains) * intercept - y.vec)
         
-        w.vec <- c(u.vec[1], soft(u.vec[-1], step.size * penalty))
+        intercept <- intercept + step.size * intercept.gradient
+        
+        u.vec <- w.vec + step.size*w.gradient.vec
+        
+        w.vec <- soft(u.vec, step.size * penalty)
       }
     }
     
