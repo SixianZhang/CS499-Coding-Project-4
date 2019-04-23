@@ -52,13 +52,10 @@ LinearModelL1 <-
     sigmoid <- function(x) {
       return(1 / 1 + exp(-x))
     }
-    
-    positive.part <- function() {
-      
-    }
-    
-    soft <- function() {
-      
+
+    soft <- function(w, lambda) {
+      l <- abs(w) - lambda
+      return(sign(w) * ifelse(l > 0, l, 0))
     }
     
     # Initializing
@@ -84,21 +81,24 @@ LinearModelL1 <-
       
       if (is.binary) {
         # do logistic
-        W.gradient.vec <-
+        w.gradient.vec <-
           -t(X.train) %*% (y.vec / (1 + exp(y.vec * (
             X.train %*% w.vec
           ))))
         
-        u.vec <- w.vec - step.size * W.gradient.vec
+        u.vec <- w.vec - step.size * w.gradient.vec
         
         w.vec <- c(u.vec[1], soft(u.vec[-1], step.size * penalty))
         
       } else{
         # do linear
+        w.gradient.vec <- t(X.train)%*%(X.train %*% w.vec - y.vec)
         
+        u.vec <- w.vec - step.size * w.gradient.vec
+        
+        w.vec <- c(u.vec[1], soft(u.vec[-1], step.size * penalty))
       }
     }
-    
     
     return(w.vec)
   }

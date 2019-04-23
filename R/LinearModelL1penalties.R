@@ -85,5 +85,4 @@ LinearModelL1penalties <-
     W.mat <- rbind(intercept.vec, feature.sd.mat %*% W.mat[-1,])
     
     return(W.mat)
-    
   }
