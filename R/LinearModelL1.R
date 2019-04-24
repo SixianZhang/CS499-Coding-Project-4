@@ -61,7 +61,11 @@ LinearModelL1 <-
       else 
         return(-1)
     }
-
+    
+    positive <- function(x){
+      return(ifelse(x > 0, x, 0))
+    }
+    
     soft <- function(w, lambda) {
       l <- abs(w) - lambda
       return(sign(w) * ifelse(l > 0, l, 0))
@@ -81,25 +85,20 @@ LinearModelL1 <-
     X.train <- cbind(1,X.scaled.mat) # n x (p+1)    
     w.vec <- rnorm(n.features) # p x 1
     intercept <- rnorm(1)
-
-    n.iteration <- 0
     
-    while (all(norm(abs(w.gradient.vec)) > opt.thresh, n.iteration <= max.iteration,
-               abs(intercept.gradient) > opt.thresh)) {
-      
-      n.iteration <- n.iteration + 1
-      
+    while (1) {
       if (is.binary) {
         # do logistic
         w.gradient.vec <-
-          -t(X.train) %*% (y.vec / (1 + exp(y.vec * (
-            X.train %*% w.vec
-          ))))
+          t(X.train) %*% (y.vec / (1 + exp(y.vec * (
+            X.train %*% w.vec + rep(1,n.trains) * intercept))))
         
-        u.vec <- w.vec - step.size * w.gradient.vec
+        intercept.gradient <- t(rep(1,n.trains)) %*% (y.vec / (1 + exp(y.vec * (
+          X.train %*% w.vec + rep(1,n.trains) * intercept))))
         
-        w.vec <- c(u.vec[1], soft(u.vec[-1], step.size * penalty))
-        
+        u.vec <- w.vec + step.size * w.gradient.vec / n.trains
+        intercept <- intercept + step.size * intercept.gradient / n.trains
+        w.vec <- soft(u.vec, step.size * penalty)
       } else{
         # do linear square loss
         w.gradient.vec <- -t(X.train) %*% 
@@ -108,14 +107,19 @@ LinearModelL1 <-
         intercept.gradient <- -t(rep(1,n.trains)) %*% 
           (X.train %*% w.vec + rep(1,n.trains) * intercept - y.vec)
         
-        intercept <- intercept + step.size * intercept.gradient
-        
-        u.vec <- w.vec + step.size*w.gradient.vec
-        
+        intercept <- intercept + step.size * intercept.gradient / n.trains
+        u.vec <- w.vec + step.size * w.gradient.vec / n.trains
         w.vec <- soft(u.vec, step.size * penalty)
       }
+      
+      temp.w.vec <- c(intercept, w.vec) 
+      if (all(positive(w.gradient.vec[w.vec==0] - penalty) < opt.thresh, 
+              positive(w.gradient.vec[w.vec!=0] - sign(w.vec[w.vec!=0]) * penalty) < opt.thresh,
+              positive(intercept.gradient) < opt.thresh))
+        break;
     }
     
+    w.vec <- c(intercept, w.vec)
     return(w.vec)
   }
 
