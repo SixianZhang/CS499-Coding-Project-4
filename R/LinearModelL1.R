@@ -115,7 +115,7 @@ LinearModelL1 <-
       temp.w.vec <- c(intercept, w.vec) 
       if (all(positive(w.gradient.vec[w.vec==0] - penalty) < opt.thresh, 
               positive(w.gradient.vec[w.vec!=0] - sign(w.vec[w.vec!=0]) * penalty) < opt.thresh,
-              positive(intercept.gradient) < opt.thresh))
+              abs(intercept.gradient) < opt.thresh))
         break;
     }
     
