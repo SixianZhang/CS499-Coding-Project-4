@@ -50,7 +50,7 @@ LinearModelL1 <-
     }
     
     sigmoid <- function(x) {
-      return(1 / 1 + exp(-x))
+      return(1 / (1 + exp(-x)))
     }
     
     positive <- function(x){
@@ -64,8 +64,7 @@ LinearModelL1 <-
     
     # Initializing
     is.binary <- all(ifelse(y.vec %in% c(0, 1), TRUE, FALSE))
-    max.iteration <- 10000L
-    step.factor <- 2
+    step.factor <- 2L
     
     if (is.binary) {
       y.vec <- ifelse(y.vec == 0, -1, 1)
@@ -73,10 +72,10 @@ LinearModelL1 <-
     
     n.features <- ncol(X.scaled.mat)   # p 
     n.trains <- nrow(X.scaled.mat)  # n 
-
+    max.iter <- 50L
     X.train <- cbind(1,X.scaled.mat) # n x (p+1)    
-    w.vec <- rnorm(n.features) # p x 1
-    intercept <- rnorm(1)
+    # w.vec <- initial.weight.vec[-1] # p x 1
+    # intercept <- initial.weight.vec[1]
     
     loss <- function(lst){
       if (is.binary)
@@ -85,67 +84,52 @@ LinearModelL1 <-
         mean((X.train %*% lst$W.vec - y.vec)^2)
     }
 
-    iter.learn <- function(W.vec, step.size){
-      intercept <- W.vec[1]
-      w.vec <- W.vec[-1]
-      if (is.binary) {
+    iter.learn <- function(initial.weight.vec, step.size){
+      if (is.binary){ 
         # do logistic
         w.gradient.vec <-
-          t(X.scaled.mat) %*% (y.vec / (1 + exp(y.vec * (
-            X.scaled.mat %*% w.vec + rep(1,n.trains) * intercept))))
-        
-        intercept.gradient <- t(rep(1,n.trains)) %*% (y.vec / (1 + exp(y.vec * (
-          X.scaled.mat %*% w.vec + rep(1,n.trains) * intercept))))
-        
-        u.vec <- w.vec + step.size * w.gradient.vec / n.trains
-        intercept <- intercept + step.size * intercept.gradient / n.trains
-        w.vec <- soft(u.vec, step.size * penalty)
-      } else{
+          t(X.train) %*% (y.vec / (1 + exp(-y.vec * (
+            X.train %*% initial.weight.vec))))
+      }else{
         # do linear square loss
-        w.gradient.vec <- -t(X.scaled.mat) %*% 
-          (X.scaled.mat %*% w.vec + rep(1,n.trains) * intercept - y.vec)
-        
-        intercept.gradient <- -t(rep(1,n.trains)) %*% 
-          (X.scaled.mat %*% w.vec + rep(1,n.trains) * intercept - y.vec)
-        
-        intercept <- intercept + step.size * intercept.gradient / n.trains
-        u.vec <- w.vec + step.size * w.gradient.vec / n.trains
-        w.vec <- soft(u.vec, step.size * penalty)
+        w.gradient.vec <- -t(X.train) %*% 
+          (X.train %*% initial.weight.vec - y.vec)
       }
-      list(
-        W.vec = c(intercept, w.vec),
-        gradient.vec = c(intercept.gradient, w.gradient.vec))
+      
+      u.vec <- initial.weight.vec + step.size * w.gradient.vec / n.trains
+      initial.weight.vec.new <- c(u.vec[1], soft(u.vec[-1], step.size * penalty))
+
+      ret <- list(
+        W.vec = initial.weight.vec.new,
+        gradient.vec = w.gradient.vec)
+      return(ret)
     }
 
-    norm.gradient <- function(W.gradient, W.vec){
-        w.vec <- W.vec[-1]
-        grad.w <- W.graident[-1]
-        grad.w[w.vec == 0] <- postive(grad.w[w.vec == 0] - penalty)
-        grad.w[w.vec != 0] <- abs(grad.w[w.vec != 0] - sign(w.vec[w.vec!=0]) * penalty)
-        W.graident.new <- c(abs(W.graident[1]), grad.w)
-        return(W.graident.new)
-    }
-
-    while (1) {
-
-      lst.n <- iter.learn(c(intercept,w.vec), step.size)
-      lst.st <- iter.learn(c(intercept,w.vec), step.size/step.factor)
-      lst.gt <- iter.learn(c(intercept,w.vec), step.size*step.factor)
-
-      if (loss(lst.st) < loss(lst.n))
-        step.size <- step.size / step.factor
-        lst.n <- lst.st
-
-      if(loss(lst.gt) < loss(lst.n))
-        step.size <- step.size * step.factor
-        lst.n <- lst.gt
-
-      if (norm.gradient(W.graident, W.vec) < opt.thresh)
-        break;
+    norm.gradient <- function(gradient, w){
+        ifelse(w==0, positive(abs(gradient) - penalty),
+               abs(gradient - sign(w) * penalty))
     }
     
-    result <- list(
-      W.vec = norm.gradient(W.graident, W.vec))
-    return(W.vec)
+    iter <-  0
+    while (1) {
+      while (loss(iter.learn(initial.weight.vec, step.size/2))
+             < loss(iter.learn(initial.weight.vec, step.size))){
+        step.size <- step.size / step.factor
+      }
+      
+      while(loss(iter.learn(initial.weight.vec, step.size*2))
+            < loss(iter.learn(initial.weight.vec, step.size))){
+        step.size <- step.size * step.factor
+      }
+      
+      lst.n <- iter.learn(initial.weight.vec, step.size)
+      initial.weight.vec <- lst.n$W.vec
+      loss(lst.n)
+      criterion <- c(lst.n$gradient.vec[1],
+                     norm.gradient(lst.n$gradient.vec[-1], initial.weight.vec[-1]))
+      iter <- iter + 1
+      if ((norm(as.matrix(abs(criterion)),'2') < opt.thresh) || (iter >= max.iter))
+        break;
+    }
+    return(initial.weight.vec)
   }
-
