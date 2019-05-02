@@ -39,4 +39,5 @@ data.list <- list(
 data.set <- data.list$prostate
 X.mat <- data.set$features
 y.vec <- data.set$labels
-W.mat <- LinearModelL1penalties(X.mat,y.vec)
+W.mat <- LinearModelL1penalties(X.mat,y.vec,seq(1, 0.1, -0.1))
+

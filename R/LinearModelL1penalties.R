@@ -50,20 +50,20 @@ LinearModelL1penalties <-
     
     initial.weight.vec <- rnorm(n.features + 1)
 
-    lambda.max <- function(intercept){
-      if (is.binary)
-        max(abs(c(t(rep(1,n.train)) %*% (y.vec / (1 + exp(y.vec *
-         (rep(1,n.train) * intercept)))), t(X.scaled.mat) %*% (y.vec /
-          (1 + exp(y.vec * (rep(1,n.train) * intercept)))))))
-      else
-        max(abs(c(-t(X.scaled.mat) %*% rep(1,n.train) * intercept - y.vec, -t(rep(1,n.train))
-         %*% (rep(1,n.train) * intercept - y.vec))))
-    }
+    # lambda.max <- function(intercept){
+    #   if (is.binary)
+    #     max(abs(c(t(rep(1,n.train)) %*% (y.vec / (1 + exp(y.vec *
+    #      (rep(1,n.train) * intercept)))), t(X.scaled.mat) %*% (y.vec /
+    #       (1 + exp(y.vec * (rep(1,n.train) * intercept)))))))
+    #   else
+    #     max(abs(c(-t(X.scaled.mat) %*% rep(1,n.train) * intercept - y.vec, -t(rep(1,n.train))
+    #      %*% (rep(1,n.train) * intercept - y.vec))))
+    # }
 
 
-    if(penalty.vec == NULL){
-      seq(lambda.max(initial.weight.vec[1]), 0, by=-0.05)
-    }
+    # if(penalty.vec == NULL){
+    #   penalty.vec <- seq(lambda.max(initial.weight.vec[1]), 0, by=-0.05)
+    # }
 
     if (!all(
       is.vector(penalty.vec),
@@ -81,7 +81,7 @@ LinearModelL1penalties <-
     opt.thresh <- 0.01
     for (i.penalty in c(1:n.penalties)) {
       W.mat[, i.penalty] <-
-        LinearModelL1(X.scaled,
+        LinearModelL1(X.scaled.mat,
                       y.vec,
                       penalty.vec[i.penalty],
                       opt.thresh,

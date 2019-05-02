@@ -63,7 +63,7 @@ LinearModelL1 <-
     }
     
     # Initializing
-    is.binary <- ifelse(y.vec %in% c(0, 1), TRUE, FALSE)
+    is.binary <- all(ifelse(y.vec %in% c(0, 1), TRUE, FALSE))
     max.iteration <- 10000L
     step.factor <- 2
     
@@ -91,30 +91,30 @@ LinearModelL1 <-
       if (is.binary) {
         # do logistic
         w.gradient.vec <-
-          t(X.train) %*% (y.vec / (1 + exp(y.vec * (
-            X.train %*% w.vec + rep(1,n.trains) * intercept))))
+          t(X.scaled.mat) %*% (y.vec / (1 + exp(y.vec * (
+            X.scaled.mat %*% w.vec + rep(1,n.trains) * intercept))))
         
         intercept.gradient <- t(rep(1,n.trains)) %*% (y.vec / (1 + exp(y.vec * (
-          X.train %*% w.vec + rep(1,n.trains) * intercept))))
+          X.scaled.mat %*% w.vec + rep(1,n.trains) * intercept))))
         
         u.vec <- w.vec + step.size * w.gradient.vec / n.trains
         intercept <- intercept + step.size * intercept.gradient / n.trains
         w.vec <- soft(u.vec, step.size * penalty)
       } else{
         # do linear square loss
-        w.gradient.vec <- -t(X.train) %*% 
-          (X.train %*% w.vec + rep(1,n.trains) * intercept - y.vec)
+        w.gradient.vec <- -t(X.scaled.mat) %*% 
+          (X.scaled.mat %*% w.vec + rep(1,n.trains) * intercept - y.vec)
         
         intercept.gradient <- -t(rep(1,n.trains)) %*% 
-          (X.train %*% w.vec + rep(1,n.trains) * intercept - y.vec)
+          (X.scaled.mat %*% w.vec + rep(1,n.trains) * intercept - y.vec)
         
         intercept <- intercept + step.size * intercept.gradient / n.trains
         u.vec <- w.vec + step.size * w.gradient.vec / n.trains
         w.vec <- soft(u.vec, step.size * penalty)
       }
       list(
-        W.vec = cbind(intercept, w.vec),
-        gradient.vec = cbind(intercept.gradient, w.gradient.vec))
+        W.vec = c(intercept, w.vec),
+        gradient.vec = c(intercept.gradient, w.gradient.vec))
     }
 
     norm.gradient <- function(W.gradient, W.vec){
@@ -122,15 +122,15 @@ LinearModelL1 <-
         grad.w <- W.graident[-1]
         grad.w[w.vec == 0] <- postive(grad.w[w.vec == 0] - penalty)
         grad.w[w.vec != 0] <- abs(grad.w[w.vec != 0] - sign(w.vec[w.vec!=0]) * penalty)
-        W.graident.new <- cbind(abs(W.graident[1]), grad.w)
+        W.graident.new <- c(abs(W.graident[1]), grad.w)
         return(W.graident.new)
     }
 
     while (1) {
 
-      lst.n <- iter.learn(w.vec, intercept, step.size)
-      lst.st <- iter.learn(w.vec, intercept, step.size/step.factor)
-      lst.gt <- iter.learn(w.vec, intercept, step.size*step.factor)
+      lst.n <- iter.learn(c(intercept,w.vec), step.size)
+      lst.st <- iter.learn(c(intercept,w.vec), step.size/step.factor)
+      lst.gt <- iter.learn(c(intercept,w.vec), step.size*step.factor)
 
       if (loss(lst.st) < loss(lst.n))
         step.size <- step.size / step.factor
