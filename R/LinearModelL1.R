@@ -49,18 +49,32 @@ LinearModelL1 <-
       stop("initial.weight.vec must be a numeric vector of length ncol(X.scaled.mat) + 1") # <- Change here
     }
     
+    
+    # inner methods
     sigmoid <- function(x) {
       return(1 / 1 + exp(-x))
     }
 
     soft <- function(w, lambda) {
       l <- abs(w) - lambda
-      return(sign(w) * ifelse(l > 0, l, 0))
+      return(sign(w) * pos.part(l))
+    }
+    
+    pos.part <- function(l){
+      ifelse(l > 0, l, 0)
+    }
+    
+    l1opt <- function(w.vec, d){
+      ifelse(
+        w.vec == 0,
+        pos.part(abs(d) - lambda),
+        abs(d - sign(w.vec)*lambda)
+      )
     }
     
     # Initializing
-    is.binary <- ifelse(y.vec %in% c(0, 1), TRUE, FALSE)
-    max.iteration <- 10000L
+    is.binary <- all(ifelse(y.vec %in% c(0, 1), TRUE, FALSE))
+    max.iteration <- 30L
     
     if (is.binary) {
       y.vec <- ifelse(y.vec == 0, -1, 1)
@@ -71,10 +85,26 @@ LinearModelL1 <-
 
     X.train = cbind(1,X.scaled.mat)    
     w.vec <- rnorm(n.features + 1)
-
+    if (is.binary) {
+      # do logistic
+      w.gradient.vec <-
+        -t(X.train) %*% (y.vec / (1 + exp(y.vec * (
+          X.train %*% w.vec
+        ))))
+    
+    } else{
+      # do linear
+      w.gradient.vec <- t(X.train)%*%(X.train %*% w.vec - y.vec)
+    }
+    
+    w.gradient.vec <- w.gradient.vec / n.trains
+    
+    
     n.iteration <- 0
     
-    while (norm(abs(W.gradient.vec)) > opt.thresh &&
+    
+    # Iteration starts here
+    while (norm(abs(w.gradient.vec)) > opt.thresh &&  # <-- Change the criterion
            n.iteration <= max.iteration) {
       
       n.iteration = n.iteration + 1
@@ -85,19 +115,53 @@ LinearModelL1 <-
           -t(X.train) %*% (y.vec / (1 + exp(y.vec * (
             X.train %*% w.vec
           ))))
+        w.gradient.vec <- w.gradient.vec / n.trains
         
-        u.vec <- w.vec - step.size * w.gradient.vec
-        
-        w.vec <- c(u.vec[1], soft(u.vec[-1], step.size * penalty))
+        # u.vec <- w.vec - step.size * w.gradient.vec
+        # 
+        # w.vec <- c(u.vec[1], soft(u.vec[-1], step.size * penalty))
         
       } else{
         # do linear
         w.gradient.vec <- t(X.train)%*%(X.train %*% w.vec - y.vec)
+        w.gradient.vec <- w.gradient.vec / n.trains
         
-        u.vec <- w.vec - step.size * w.gradient.vec
-        
-        w.vec <- c(u.vec[1], soft(u.vec[-1], step.size * penalty))
+        # u.vec <- w.vec - step.size * w.gradient.vec
+        # 
+        # w.vec <- c(u.vec[1], soft(u.vec[-1], step.size * penalty))
       }
+      
+      
+      
+      crit.vec <- c(abs(grad.vec[1]), l1opt(w.vec[-1], -w.gradient.vec[-1])) # This line why
+      lmax <- max(abs(grad.vec[-1])) # This line why
+      
+      while(cost.step(step.size/2) < cost.step(step.size)){
+        step.size <- step.size/2
+      }
+      
+      while(cost.step(step.size*2) < cost.step(step.size)){
+        step.size <- step.size*2
+      }
+      
+      cost.weight <- function(w.vec){
+        pred.vec <- X.int %*% w.vec
+        loss.vec <- log(1 + exp(- pred.vec * y.tilde))
+        mean(loss.vec) + lambda*sum(abs(w.vec[-1]))
+      }
+      
+      cost.step <- function(step){
+        new.w <- w.step(step)
+        cost.weight(new.w)
+      }
+      
+      w.step <- function(step){
+        u.vec <- w.vec - step.size * w.gradient.vec
+        c(u.vec[1], soft(u.vec[-1], step.size * penalty))
+      }
+      
+      w.vec <- w.step(step.size)
+      
     }
     
     return(w.vec)

@@ -1,0 +1,13 @@
+Package: LinearModelL1
+Type: Package
+Title: Linear Model algorithm with L1 regularization
+Version: 2019.04.24
+Author: Sixian Zhang, Zaoyi Chi, Hao Wang, Huayu Li
+Maintainer: Sixian Zhang <sz244@nau.edu>
+License: GPL-3
+Description: This is a linear model L1 package that learn from a traning data set and 
+    predict the output of a test data set
+LinkingTo: RcppEigen
+Suggests: ElemStatLearn, rmarkdown, knitr
+VignetteBuilder: knitr, rmarkdown
+RoxygenNote: 6.1.1

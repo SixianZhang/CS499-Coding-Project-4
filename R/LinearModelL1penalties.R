@@ -38,11 +38,11 @@ LinearModelL1penalties <-
       stop("penalty.vec must be a non-negative decreasing numeric vector")
     }
     
-    if (!all(is.numeric(opt.thresh),
-             length(opt.thresh) == 1,
-             opt.thresh > 0)) {
-      stop("opt.thresh must be a positive numeric scalar")
-    }
+    # if (!all(is.numeric(opt.thresh),
+    #          length(opt.thresh) == 1,
+    #          opt.thresh > 0)) {
+    #   stop("opt.thresh must be a positive numeric scalar")
+    # }
     
     # Initializing
     n.train <- nrow(X.mat)
@@ -67,14 +67,16 @@ LinearModelL1penalties <-
     W.mat <- matrix(0, nrow = n.features + 1, ncol = n.penalties)
     # W.temp.mat <- W.mat
     
+    opt.thresh = 0.01;
+    
     for (i.penalty in c(1:n.penalties)) {
       W.mat[, i.penalty] <-
-        LinearModelL1(X.scaled,
-                      y.vec,
-                      penalty.vec[i.penalty],
-                      opt.thresh,
-                      initial.weight.vec,
-                      step.size)
+        LinearModelL1(X.scaled.mat = X.scaled.mat,
+                      y.vec = y.vec,
+                      penalty = penalty.vec[i.penalty],
+                      opt.thresh = opt.thresh,
+                      initial.weight.vec = initial.weight.vec,
+                      step.size = step.size)
       
       initial.weight.vec <-
         W.mat[, i.penalty] 

@@ -91,7 +91,7 @@ LinearModelL1CV <-
     selected.penalty.index <- which.min(mean.validation.loss.vec)
     
     weight.vec <- 
-      LinearModelL1penalties(X.mat, y.vec, penalty.vec)[, selected.penalty.index]
+      LinearModelL1penalties(X.mat, y.vec, penalty.vec, step.size)[, selected.penalty.index]
     
     predict <- function(testX.mat) {
       # Check type and dimension
