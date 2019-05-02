@@ -53,14 +53,6 @@ LinearModelL1 <-
       return(1 / 1 + exp(-x))
     }
     
-    sign <- function(w){
-      if (w > 0)
-        return(1)
-      else if (w = 0)
-        return(0)
-      else 
-        return(-1)
-    }
     
     positive <- function(x){
       return(ifelse(x > 0, x, 0))
