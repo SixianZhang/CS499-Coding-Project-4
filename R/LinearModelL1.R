@@ -53,7 +53,6 @@ LinearModelL1 <-
       return(1 / 1 + exp(-x))
     }
     
-    
     positive <- function(x){
       return(ifelse(x > 0, x, 0))
     }
