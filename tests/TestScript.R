@@ -1,4 +1,4 @@
-library(LinearModel)
+library(L1LinearModel)
 # This is a test script for general data
 # library(LinearModel)
 
