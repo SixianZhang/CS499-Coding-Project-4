@@ -18,7 +18,7 @@ LinearModelL1CV <-
            y.vec,
            fold.vec = sample(rep(1:n.folds, l = length(y.vec))),
            n.folds = 5L,
-           penalty.vec = seq(1, 0.1, -0.1),
+           penalty.vec = NULL,
            step.size = 0.1) {
     # Check type and dimension
     if (!all(is.numeric(X.mat), is.matrix(X.mat))) {
@@ -30,7 +30,6 @@ LinearModelL1CV <-
              length(y.vec) == nrow(X.mat))) {
       stop("y.vec must be a numeric vector of length nrow(X.mat)")
     }
-    
     
     if (!all(is.numeric(fold.vec),
              is.vector(fold.vec),

@@ -1,0 +1,12 @@
+Package: L1LinearModel
+Type: Package
+Title: L1-regularized linear models for regression and binary classification.
+Version: 2019.05.01
+Author: Sixian Zhang, Zaoyi Chi, Hao Wang, Huayu Li
+Maintainer: Sixian Zhang <sz244@nau.edu>
+License: GPL-3
+Description: L1-regularized linear models for regression and binary classification.
+LinkingTo: RcppEigen
+Suggests: ElemStatLearn, rmarkdown, knitr
+VignetteBuilder: knitr, rmarkdown
+RoxygenNote: 6.1.1
