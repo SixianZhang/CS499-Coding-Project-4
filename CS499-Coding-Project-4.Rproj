@@ -14,5 +14,4 @@ LaTeX: pdfLaTeX
 
 BuildType: Package
 PackageUseDevtools: Yes
-PackagePath: /anaconda3/lib/R/library
 PackageInstallArgs: --no-multiarch --with-keep.source
