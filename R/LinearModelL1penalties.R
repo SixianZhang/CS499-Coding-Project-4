@@ -12,7 +12,7 @@
 #'
 #' @examples
 LinearModelL1penalties <-
-  function(X.mat, y.vec, penalty.vec, step.size) {
+  function(X.mat, y.vec, penalty.vec=NULL, step.size=0.01) {
     # Check type and dimension
     if (!all(is.numeric(X.mat), is.matrix(X.mat))) {
       stop("X.mat must be a numeric matrix")
@@ -43,6 +43,18 @@ LinearModelL1penalties <-
              opt.thresh > 0)) {
       stop("opt.thresh must be a positive numeric scalar")
     }
+
+    is.binary <- ifelse((all(y.vec %in% c(0, 1))), TRUE, FALSE)
+
+    lambda.max <- function(intercept){
+      if (is.binary)
+        max(abs(c(t(rep(1,n.train)) %*% (y.vec / (1 + exp(y.vec *
+         (rep(1,n.train) * intercept)))), t(X.train) %*% (y.vec /
+          (1 + exp(y.vec * (rep(1,n.train) * intercept)))))))
+      else
+        max(abs(c(-t(X.train) %*% rep(1,n.train) * intercept - y.vec, -t(rep(1,n.train))
+         %*% (rep(1,n.train) * intercept - y.vec))))
+    }
     
     # Initializing
     n.train <- nrow(X.mat)
@@ -62,7 +74,7 @@ LinearModelL1penalties <-
     X.scaled.mat <-
       t((t(X.mat) - feature.mean.vec) / feature.sd.vec)
     
-    initial.weight.vec <- rep(0, n.features + 1)
+    initial.weight.vec <- rnorm(n.features + 1)
     
     W.mat <- matrix(0, nrow = n.features + 1, ncol = n.penalties)
     # W.temp.mat <- W.mat
