@@ -46,6 +46,10 @@ LinearModelL1CV <-
       stop("penalty.vec must be a non-negative decreasing numeric vector")
     }
     
+    sigmoid <- function(x) {
+      return(1 / 1 + exp(-x))
+    }
+    
     # Initiallize
     is.binary <- ifelse((all(y.vec %in% c(0, 1))), TRUE, FALSE)
     
@@ -101,8 +105,11 @@ LinearModelL1CV <-
       }
       
       # prediction.vec <- ifelse(cbind(1,testX.mat) %*% t(weight.vec) > 0.5, 1, -1)
-      prediction.vec <- cbind(1, testX.mat) %*% weight.vec
-      
+      if(is.binary)
+        prediction.vec <- sigmoid(cbind(1, testX.mat) %*% weight.vec)
+      else
+        prediction.vec <- cbind(1, testX.mat) %*% weight.vec
+
       return(prediction.vec)
     }
     

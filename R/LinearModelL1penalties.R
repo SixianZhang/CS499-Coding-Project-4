@@ -29,37 +29,11 @@ LinearModelL1penalties <-
       return(result)
     }
     
-    if (!all(
-      is.vector(penalty.vec),
-      is.numeric(penalty.vec),
-      penalty.vec >= 0,
-      is.decending(penalty.vec)
-    )) {
-      stop("penalty.vec must be a non-negative decreasing numeric vector")
-    }
-    
-    if (!all(is.numeric(opt.thresh),
-             length(opt.thresh) == 1,
-             opt.thresh > 0)) {
-      stop("opt.thresh must be a positive numeric scalar")
-    }
-
     is.binary <- ifelse((all(y.vec %in% c(0, 1))), TRUE, FALSE)
-
-    lambda.max <- function(intercept){
-      if (is.binary)
-        max(abs(c(t(rep(1,n.train)) %*% (y.vec / (1 + exp(y.vec *
-         (rep(1,n.train) * intercept)))), t(X.train) %*% (y.vec /
-          (1 + exp(y.vec * (rep(1,n.train) * intercept)))))))
-      else
-        max(abs(c(-t(X.train) %*% rep(1,n.train) * intercept - y.vec, -t(rep(1,n.train))
-         %*% (rep(1,n.train) * intercept - y.vec))))
-    }
     
     # Initializing
     n.train <- nrow(X.mat)
     n.features <- ncol(X.mat) # features is p here
-    n.penalties <- length(penalty.vec)
     
     # Scale X.mat with m = 0, sd = 1
     feature.mean.vec <- colMeans(X.mat)
@@ -75,10 +49,36 @@ LinearModelL1penalties <-
       t((t(X.mat) - feature.mean.vec) / feature.sd.vec)
     
     initial.weight.vec <- rnorm(n.features + 1)
+
+    lambda.max <- function(intercept){
+      if (is.binary)
+        max(abs(c(t(rep(1,n.train)) %*% (y.vec / (1 + exp(y.vec *
+         (rep(1,n.train) * intercept)))), t(X.scaled.mat) %*% (y.vec /
+          (1 + exp(y.vec * (rep(1,n.train) * intercept)))))))
+      else
+        max(abs(c(-t(X.scaled.mat) %*% rep(1,n.train) * intercept - y.vec, -t(rep(1,n.train))
+         %*% (rep(1,n.train) * intercept - y.vec))))
+    }
+
+
+    if(penalty.vec == NULL){
+      seq(lambda.max(initial.weight.vec[1]), 0, by=-0.05)
+    }
+
+    if (!all(
+      is.vector(penalty.vec),
+      is.numeric(penalty.vec),
+      penalty.vec >= 0,
+      is.decending(penalty.vec)
+    )) {
+      stop("penalty.vec must be a non-negative decreasing numeric vector")
+    }
+
+    n.penalties <- length(penalty.vec)
     
     W.mat <- matrix(0, nrow = n.features + 1, ncol = n.penalties)
     # W.temp.mat <- W.mat
-    
+    opt.thresh <- 0.01
     for (i.penalty in c(1:n.penalties)) {
       W.mat[, i.penalty] <-
         LinearModelL1(X.scaled,
