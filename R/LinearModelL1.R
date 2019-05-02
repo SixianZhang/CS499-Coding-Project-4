@@ -74,6 +74,7 @@ LinearModelL1 <-
     # Initializing
     is.binary <- ifelse(y.vec %in% c(0, 1), TRUE, FALSE)
     max.iteration <- 10000L
+    step.factor <- 2
     
     if (is.binary) {
       y.vec <- ifelse(y.vec == 0, -1, 1)
@@ -86,7 +87,16 @@ LinearModelL1 <-
     w.vec <- rnorm(n.features) # p x 1
     intercept <- rnorm(1)
     
-    while (1) {
+    loss <- function(lst){
+      if (is.binary)
+        mean(log(1+exp(-y.vec * (X.train %*% lst$W.vec))))
+      else
+        mean((X.train %*% lst$W.vec - y.vec)^2)
+    }
+
+    iter.learn <- function(W.vec, step.size){
+      intercept <- W.vec[1]
+      w.vec <- W.vec[-1]
       if (is.binary) {
         # do logistic
         w.gradient.vec <-
@@ -111,15 +121,40 @@ LinearModelL1 <-
         u.vec <- w.vec + step.size * w.gradient.vec / n.trains
         w.vec <- soft(u.vec, step.size * penalty)
       }
-      
-      temp.w.vec <- c(intercept, w.vec) 
-      if (all(positive(w.gradient.vec[w.vec==0] - penalty) < opt.thresh, 
-              positive(w.gradient.vec[w.vec!=0] - sign(w.vec[w.vec!=0]) * penalty) < opt.thresh,
-              abs(intercept.gradient) < opt.thresh))
+      list(
+        W.vec = cbind(intercept, w.vec),
+        gradient.vec = cbind(intercept.gradient, w.gradient.vec))
+    }
+
+    norm.gradient <- function(W.gradient, W.vec){
+        w.vec <- W.vec[-1]
+        grad.w <- W.graident[-1]
+        grad.w[w.vec == 0] <- postive(grad.w[w.vec == 0] - penalty)
+        grad.w[w.vec != 0] <- abs(grad.w[w.vec != 0] - sign(w.vec[w.vec!=0]) * penalty)
+        W.graident.new <- cbind(abs(W.graident[1]), grad.w)
+        return(W.graident.new)
+    }
+
+    while (1) {
+
+      lst.n <- iter.learn(w.vec, intercept, step.size)
+      lst.st <- iter.learn(w.vec, intercept, step.size/step.factor)
+      lst.gt <- iter.learn(w.vec, intercept, step.size*step.factor)
+
+      if (loss(lst.st) < loss(lst.n))
+        step.size <- step.size / step.factor
+        lst.n <- lst.st
+
+      if(loss(lst.gt) < loss(lst.n))
+        step.size <- step.size * step.factor
+        lst.n <- lst.gt
+
+      if (norm.gradient(W.graident, W.vec) < opt.thresh)
         break;
     }
     
-    w.vec <- c(intercept, w.vec)
-    return(w.vec)
+    result <- list(
+      W.vec = norm.gradient(W.graident, W.vec))
+    return(W.vec)
   }
 
