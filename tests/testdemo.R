@@ -58,5 +58,5 @@ X.scaled.mat <-
 
 initial.weight.vec <- rnorm(n.features + 1)
 
-head(LinearModelL1(X.scaled.mat,y.vec,0.2,0.1,initial.weight.vec,0.1))
-
+# head(LinearModelL1(X.scaled.mat,y.vec,0.2,0.1,initial.weight.vec,0.1))
+LinearModelL1penalties(X.mat, y.vec, seq(0.4, 0.01, -0.01), 0.01)

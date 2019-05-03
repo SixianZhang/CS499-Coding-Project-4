@@ -12,7 +12,7 @@
 #'
 #' @examples
 LinearModelL1penalties <-
-  function(X.mat, y.vec, penalty.vec=NULL, step.size=0.01) {
+  function(X.mat, y.vec, penalty.vec=seq(0.5, 0.01, by = -0.03), step.size=0.01) {
     # Check type and dimension
     if (!all(is.numeric(X.mat), is.matrix(X.mat))) {
       stop("X.mat must be a numeric matrix")
@@ -27,6 +27,19 @@ LinearModelL1penalties <-
     is.decending <- function(vec) {
       result <- all(diff(vec) < 0)
       return(result)
+    }
+
+    if (!all(
+      is.vector(penalty.vec),
+      is.numeric(penalty.vec),
+      penalty.vec >= 0,
+      is.decending(penalty.vec)
+    )) {
+      stop("penalty.vec must be a non-negative decreasing numeric vector")
+    }
+
+    if (!all(length(step.size) == 1, is.numeric(step.size))){
+      stop("step.size must be a numeric scalar.")
     }
     
     is.binary <- ifelse((all(y.vec %in% c(0, 1))), TRUE, FALSE)
@@ -64,15 +77,6 @@ LinearModelL1penalties <-
     # if(penalty.vec == NULL){
     #   penalty.vec <- seq(lambda.max(initial.weight.vec[1]), 0, by=-0.05)
     # }
-
-    if (!all(
-      is.vector(penalty.vec),
-      is.numeric(penalty.vec),
-      penalty.vec >= 0,
-      is.decending(penalty.vec)
-    )) {
-      stop("penalty.vec must be a non-negative decreasing numeric vector")
-    }
 
     n.penalties <- length(penalty.vec)
     

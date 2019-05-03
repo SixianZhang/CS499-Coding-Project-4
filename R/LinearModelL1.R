@@ -48,6 +48,10 @@ LinearModelL1 <-
     )) {
       stop("initial.weight.vec must be a numeric vector of length ncol(X.scaled.mat) + 1") # <- Change here
     }
+
+    if (!all(length(step.size) == 1, is.numeric(step.size))){
+      stop("step.size must be a numeric scalar.")
+    }
     
     sigmoid <- function(x) {
       return(1 / (1 + exp(-x)))
@@ -72,7 +76,7 @@ LinearModelL1 <-
     
     n.features <- ncol(X.scaled.mat)   # p 
     n.trains <- nrow(X.scaled.mat)  # n 
-    max.iter <- 50L
+    max.iter <- 30L
     X.train <- cbind(1,X.scaled.mat) # n x (p+1)    
     # w.vec <- initial.weight.vec[-1] # p x 1
     # intercept <- initial.weight.vec[1]
