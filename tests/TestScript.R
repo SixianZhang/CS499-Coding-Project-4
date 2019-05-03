@@ -22,20 +22,20 @@ data.list <- list(
   #   is.01 = TRUE
   # ),
   # 
-  # zip.train = list(
-  #   features = as.matrix(zip.train[, -1]),
-  #   labels = zip.train[, 1],
-  #   is.01 = TRUE
-  # ),
+  zip.train = list(
+    features = as.matrix(zip.train[, -1]),
+    labels = zip.train[, 1],
+    is.01 = TRUE
+  )
   # 
   # 
   # prostate = list(features = as.matrix(prostate[, 1:8]),
   #                 labels = prostate$lpsa,
   #                 is.01 = FALSE),
   # 
-  ozone = list(features = as.matrix(ozone[,-1]),
-               labels = ozone[, 1],
-               is.01 = FALSE)
+  # ozone = list(features = as.matrix(ozone[,-1]),
+  #              labels = ozone[, 1],
+  #              is.01 = FALSE)
 )
 
 n.folds <- 4L
@@ -47,11 +47,11 @@ for (data.name in names(data.list)) {
   #Check data type here:
   
   set.seed(1)
-  
+
   fold.vec <- sample(rep(1:n.folds, l = length(data.set$labels)))
   
-  penalty.vec <- seq(0.3, 0, by = -0.03)
-  
+  penalty.vec <- 10^seq(5, -3, length.out=100)
+
   for (i.fold in (1:n.folds)) {
     train.index <- fold.vec != i.fold
     test.index <- !train.index
@@ -117,8 +117,8 @@ for (data.name in names(data.list)) {
   
   matplot(
     y = cbind(model.list$mean.validation.loss.vec, model.list$mean.train.loss.vec),
-    x = as.matrix(penalty.vec),
-    xlab = "penalty",
+    x = as.matrix(log10(penalty.vec)),
+    xlab = "log_10(penalty)",
     ylab = "mean loss value",
     type = "l",
     lty = 1:2,
@@ -131,6 +131,7 @@ for (data.name in names(data.list)) {
             col = 2,
             pch = 19)
   legend(
+    "topright",
     x = 0,
     y = max(cbind(model.list$mean.validation.loss.vec, model.list$mean.train.loss.vec)),
     c("Validation loss", "Train loss"),
