@@ -12,7 +12,7 @@
 #'
 #' @examples
 LinearModelL1penalties <-
-  function(X.mat, y.vec, penalty.vec=seq(0.5, 0.01, by = -0.03), step.size=0.01) {
+  function(X.mat, y.vec, penalty.vec=seq(0.3, 0, by = -0.03), step.size=0.01) {
     # Check type and dimension
     if (!all(is.numeric(X.mat), is.matrix(X.mat))) {
       stop("X.mat must be a numeric matrix")

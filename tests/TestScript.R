@@ -10,11 +10,11 @@ data(prostate, package = "ElemStatLearn")
 data(ozone, package = "ElemStatLearn")
 
 data.list <- list(
-  spam = list(
-    features = as.matrix(spam[, 1:57]),
-    labels = ifelse(spam$spam == "spam", 1, 0),
-    is.01 = TRUE
-  )
+  # spam = list(
+  #   features = as.matrix(spam[, 1:57]),
+  #   labels = ifelse(spam$spam == "spam", 1, 0),
+  #   is.01 = TRUE
+  # ),
 
   # SAheart = list(
   #   features = as.matrix(SAheart[, c(1:4,6:9)]),
@@ -33,9 +33,9 @@ data.list <- list(
   #                 labels = prostate$lpsa,
   #                 is.01 = FALSE),
   # 
-  # ozone = list(features = as.matrix(ozone[,-1]),
-  #              labels = ozone[, 1],
-  #              is.01 = FALSE)
+  ozone = list(features = as.matrix(ozone[,-1]),
+               labels = ozone[, 1],
+               is.01 = FALSE)
 )
 
 n.folds <- 4L
@@ -50,7 +50,7 @@ for (data.name in names(data.list)) {
   
   fold.vec <- sample(rep(1:n.folds, l = length(data.set$labels)))
   
-  penalty.vec <- seq(0.3, 0.01, by = -0.03)
+  penalty.vec <- seq(0.3, 0, by = -0.03)
   
   for (i.fold in (1:n.folds)) {
     train.index <- fold.vec != i.fold

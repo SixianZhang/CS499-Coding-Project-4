@@ -18,7 +18,7 @@ LinearModelL1CV <-
            y.vec,
            fold.vec = sample(rep(1:n.folds, l = length(y.vec))),
            n.folds = 5L,
-           penalty.vec = seq(0.3, 0.01, by = -0.03),
+           penalty.vec = seq(0.3, 0, by = -0.03),
            step.size = 0.1) {
     # Check type and dimension
     if (!all(is.numeric(X.mat), is.matrix(X.mat))) {
@@ -67,20 +67,21 @@ LinearModelL1CV <-
       for (set.name in names(set.list)) {
         index <- get(set.name, set.list)
         
-        W.mat <-
-          LinearModelL1penalties(X.mat, y.vec, penalty.vec, step.size)
-        
+        if(set.name == "train"){
+          W.mat <-
+            LinearModelL1penalties(X.mat[index,], y.vec[index], penalty.vec, step.size)
+        }
         if (is.binary) {
           # Do 0-1 loss
           predict <- sigmoid(cbind(1, X.mat[index,]) %*% W.mat)
           predict <- ifelse(predict > 0.5, 1, 0)
           loss.vec <-
-            colMeans((ifelse(predict == y.vec[get(set.name, set.list)], 0, 1)))
+            colMeans((ifelse(predict == y.vec[index], 0, 1)))
         } else{
           # Do square loss
           predict <- cbind(1, X.mat[index,]) %*% W.mat
           loss.vec <-
-            colMeans((predict - y.vec[get(set.name, set.list)]) ^ 2)
+            colMeans((predict - y.vec[index]) ^ 2)
         }
         
         if (set.name == "train") {
