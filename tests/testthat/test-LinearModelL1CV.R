@@ -31,7 +31,11 @@ test_that("For an invalid input, your function stops with an informative error m
             expect_error(
               result.list <-
                 LinearModelL1CV(X.mat,y.vec,fold.vec,n.folds = 0,penalty.vec,step.size = 0.01),
+<<<<<<< HEAD
               "n.folds must be an interger greater than 1 and equal to the number of unique element of fold.vec",
+=======
+              "n.folds must be an interger greater than 1 and equal to the length of fold.vec",
+>>>>>>> f300f454abab694fccdf7fc1a029c3aac1c409ba
               fixed = TRUE   
             )
             expect_error(

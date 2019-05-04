@@ -5,20 +5,27 @@
 #' @param X.mat a numeric feature matrix of size n x p
 #' @param y.vec a numeric labe vector of length nrow(X.mat)
 #' @param fold.vec a numeric vector of lenght nrow(X.mat)
-#' @param n.folds an integer greater than 1, which indicate number of folds, default is 5
-#' @param penalty.vec a non-negative numeric decreasing penalty vector, default is 1 to 0.1 with 0.1 decreament
-#' @param step.size a positive numeric value, default is 0.1
+#' @param n.folds a positive integer indicate number of folds, default is 5L
+#' @param penalty.vec a non-negative numeric decreasing penalty vector, default is seq(0.5, 0, length.out = 100)
+#' @param step.size a positive numeric value, default is 0.01
 #'
-#' @return
+#' @return a list with bunch of information, mean.validation.loss.vec, mean.train.loss.vec, penalty.vec, selected.penalty, weight.vec, predict function 
 #' @export
 #'
-#' @examples
+#' @examples 
+#' library(L1LinearModel)
+#' data(prostate, package = "ElemStatLearn")
+#' prostate <- list(features = as.matrix(prostate[, 1:8]), labels = prostate$lpsa, is.01 = FALSE)
+#' data.set <- prostate
+#' X.mat <- data.set$features
+#' y.vec <- data.set$labels
+#' LinearModelL1CV(X.mat, y.vec)
 LinearModelL1CV <-
   function(X.mat,
            y.vec,
            fold.vec = sample(rep(1:n.folds, l = length(y.vec))),
            n.folds = 5L,
-           penalty.vec = seq(0.3, 0, by = -0.03),
+           penalty.vec=seq(0.5, 0, length.out = 100),
            step.size = 0.01) {
     # Check type and dimension
     if (!all(is.numeric(X.mat), is.matrix(X.mat))) {
@@ -43,6 +50,7 @@ LinearModelL1CV <-
             n.folds > 1,
             n.folds == length(unique(fold.vec)))){
       stop("n.folds must be an interger greater than 1 and equal to the number of unique element of fold.vec")
+
     }
     
     if (!all(
