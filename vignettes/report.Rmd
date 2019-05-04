@@ -1,0 +1,826 @@
+---
+title: "Report for Coding project 4: L1-regularized linear models for regression and binary classification."
+author: "Sixian Zhang, Zaoyi Chi, Hao Wang, Huayu Li"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Report for Coding project 4: L1-regularized linear models for regression and binary classification.}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+For this project you will be writing an R package that implements optimization algorithms for linear models with L1-regularization. 
+
+Here are some significant formulas that have been used in this function:
+
+**Loss: **
+
+**1.Regression: **$\frac{1}{2}||X_w-y||^2_2 , \forall{R^u}$
+
+**2.Binary classification: **$L(w) = \sum^{n}_{i=1}log[1+exp(-\tilde{y}_if(x_i))] , \forall{y_i} \epsilon\{0,1\}$
+
+
+**Cost: ** 
+
+**1.Regression: **$C(w) = \frac{1}{2}||X_w-y||^2_2 + \lambda||w||_1$
+
+**2.Binary classification: **$C(w) = \sum^{n}_{i=1}log[1+exp(-\tilde{y}_if(x_i))] + \lambda||w||_1$
+
+
+**Proximal Gradient Algorithm: **
+
+**1.Step direction: **$d^{t)} = -\nabla L(w^{(0)})$
+
+**2.Intermediate step: **$u^{(t)} = w^{(t)}+\alpha^{(t)}d^{(t)}$
+
+**3.Proximal operator**$w^{(t+1)} = Prox_{x^{(t)}R(z)} = argmin_z(\alpha^{(t)}R(z)+\frac{1}{2}||z-u^{(t)}||^2_2)$
+
+## Main Function
+The purpose of this section is to give users a general information of this package. We will briefly go over the main functions.
+
+```{r}
+library(LinearModelL1)
+library(ElemStatLearn)
+
+data(spam, package = "ElemStatLearn")
+data(SAheart, package = "ElemStatLearn")
+data(zip.train, package = "ElemStatLearn")
+zip.train <- zip.train[zip.train[, 1] %in% c(0, 1),]
+data(prostate, package = "ElemStatLearn")
+data(ozone, package = "ElemStatLearn")
+
+data.list <- list(
+  spam = list(
+    features = as.matrix(spam[, 1:57]),
+    labels = ifelse(spam$spam == "spam", 1, 0),
+    is.01 = TRUE,
+    step.size = 0.1,
+    lmax = 0.3
+  ),
+
+  SAheart = list(
+    features = as.matrix(SAheart[, c(1:4, 6:9)]),
+    labels = SAheart$chd,
+    is.01 = TRUE,
+    step.size = 0.1,
+    lmax = 0.2
+  ),
+
+  zip.train = list(
+    features = as.matrix(zip.train[, -1]),
+    labels = zip.train[, 1],
+    is.01 = TRUE,
+    step.size = 0.1,
+    lmax = 0.5
+  ),
+
+
+  prostate = list(
+    features = as.matrix(prostate[, 1:8]),
+    labels = prostate$lpsa,
+    is.01 = FALSE,
+    step.size = 0.1,
+    lmax = 1
+  ),
+
+  ozone = list(
+    features = as.matrix(ozone[,-1]),
+    labels = ozone[, 1],
+    is.01 = FALSE,
+    step.size = 0.01,
+    lmax = 21
+  )
+)
+
+n.folds <- 5L
+
+```
+
+## Experiments/application
+We are going to run our code on the following data sets.
+
+## Data set 1: spam
+```{r}
+data.name = 1
+data.set <- data.list[[data.name]]
+
+test.loss.mat <- matrix(0, nrow = n.folds, ncol = 2)
+step.size <- data.set$step.size
+
+penalty.vec = seq(data.set$lmax, data.set$lmax / 100, length.out = 100)
+
+
+#Check data type here:
+
+set.seed(1)
+
+fold.vec <- sample(rep(1:n.folds, l = length(data.set$labels)))
+
+for (i.fold in (1:n.folds)) {
+  train.index <- fold.vec != i.fold
+  test.index <- fold.vec == i.fold
+
+  X.mat <- data.set$features
+  y.vec <- data.set$labels
+
+  X.train <- data.set$features[train.index,]
+  y.train <- data.set$labels[train.index]
+  X.test <- data.set$features[test.index,]
+  y.test <- data.set$labels[test.index]
+
+  result.list <- LinearModelL1CV(
+    X.mat = X.train,
+    y.vec = y.train,
+    # fold.vec = sample(rep(1:n.folds, l = length(y.vec))),
+    n.folds = 5L,
+    penalty.vec = penalty.vec,
+    step.size = step.size
+  )
+
+  if (data.set$is.01) {
+    # binary data
+    L1.predict <-
+      ifelse(result.list$predict(X.test) > 0.5, 1, 0)
+    L1.loss <- mean(ifelse(L1.predict == y.test, 0, 1))
+
+    baseline.predict <- ifelse(mean(y.test) > 0.5, 1, 0)
+    baseline.loss <- mean(ifelse(baseline.predict == y.test, 0, 1))
+
+    } else{
+    # regression data
+    L1.predict <- result.list$predict(X.test)
+    L1.loss <- mean((L1.predict - y.test) ^ 2)
+
+    baseline.predict <- mean(y.test)
+    baseline.loss <- mean((baseline.predict - y.test) ^ 2)
+  }
+
+  test.loss.mat[i.fold,] = c(L1.loss, baseline.loss)
+}
+
+colnames(test.loss.mat) <- c("Linear Model L1", "Baseline")
+
+
+```
+
+### Matrix of loss values
+```{r, fig.show='hold', fig.width= 6, fig.height= 6}
+
+# plot result
+if (!data.set$is.01) {
+  barplot(
+    test.loss.mat,
+    main = c("Square Regression: ", "spam"),
+    xlab = "mean loss value",
+    legend = (rownames(test.loss.mat)),
+    beside = TRUE
+  )
+} else{
+  barplot(
+    test.loss.mat,
+    main = c("Binary Classification: ", "spam"),
+    xlab = "mean loss value",
+    legend = (rownames(test.loss.mat)),
+    beside = TRUE
+  )
+}
+
+model.list <- LinearModelL1CV(
+  X.mat = X.mat,
+  y.vec = y.vec,
+  # fold.vec = sample(rep(1:n.folds, l = length(y.vec))),
+  n.folds = 5L,
+  penalty.vec = penalty.vec,
+  step.size = step.size
+)
+
+```
+
+Comment on difference in accuracy:
+L1 Linear model is better than baseline
+
+### Train/validation loss plot
+```{r, fig.show='hold', fig.width= 6, fig.height= 6}
+matplot(
+  x = penalty.vec,
+  y = cbind(
+    model.list$mean.validation.loss.vec,
+    model.list$mean.train.loss.vec
+  ),
+  xlab = "penalties",
+  ylab = "mean loss value",
+  type = "l",
+  lty = 1:2,
+  pch = 15,
+  col = c(17)
+)
+
+
+dot.x <- model.list$selected.penalty
+dot.y <- model.list$mean.validation.loss.vec[which(penalty.vec == dot.x)]
+
+matpoints(x = dot.x,
+          y = dot.y,
+          col = 2,
+          pch = 19)
+legend(
+  x = 0,
+  y = max(
+    cbind(
+      model.list$mean.validation.loss.vec,
+      model.list$mean.train.loss.vec
+    )
+  ),
+  c("Validation loss", "Train loss"),
+  lty = 1:2,
+  xjust = 0,
+  yjust = 1
+)
+```
+
+What are the optimal regularization parameters?
+Answer: penalty = `r dot.x`
+
+
+
+
+
+## Data set 2: SAheart
+```{r}
+data.name = 2
+data.set <- data.list[[data.name]]
+
+test.loss.mat <- matrix(0, nrow = n.folds, ncol = 2)
+step.size <- data.set$step.size
+
+penalty.vec = seq(data.set$lmax, data.set$lmax / 100, length.out = 100)
+
+
+#Check data type here:
+
+set.seed(1)
+
+fold.vec <- sample(rep(1:n.folds, l = length(data.set$labels)))
+
+for (i.fold in (1:n.folds)) {
+  train.index <- fold.vec != i.fold
+  test.index <- fold.vec == i.fold
+
+  X.mat <- data.set$features
+  y.vec <- data.set$labels
+
+  X.train <- data.set$features[train.index,]
+  y.train <- data.set$labels[train.index]
+  X.test <- data.set$features[test.index,]
+  y.test <- data.set$labels[test.index]
+
+  result.list <- LinearModelL1CV(
+    X.mat = X.train,
+    y.vec = y.train,
+    # fold.vec = sample(rep(1:n.folds, l = length(y.vec))),
+    n.folds = 5L,
+    penalty.vec = penalty.vec,
+    step.size = step.size
+  )
+
+  if (data.set$is.01) {
+    # binary data
+    L1.predict <-
+      ifelse(result.list$predict(X.test) > 0.5, 1, 0)
+    L1.loss <- mean(ifelse(L1.predict == y.test, 0, 1))
+
+    baseline.predict <- ifelse(mean(y.test) > 0.5, 1, 0)
+    baseline.loss <- mean(ifelse(baseline.predict == y.test, 0, 1))
+
+    } else{
+    # regression data
+    L1.predict <- result.list$predict(X.test)
+    L1.loss <- mean((L1.predict - y.test) ^ 2)
+
+    baseline.predict <- mean(y.test)
+    baseline.loss <- mean((baseline.predict - y.test) ^ 2)
+  }
+
+  test.loss.mat[i.fold,] = c(L1.loss, baseline.loss)
+}
+
+colnames(test.loss.mat) <- c("Linear Model L1", "Baseline")
+
+```
+
+### Matrix of loss values
+```{r, fig.show='hold', fig.width= 6, fig.height= 6}
+# plot result
+if (!data.set$is.01) {
+  barplot(
+    test.loss.mat,
+    main = c("Square Regression: ", "SAheart"),
+    xlab = "mean loss value",
+    legend = (rownames(test.loss.mat)),
+    beside = TRUE
+  )
+} else{
+  barplot(
+    test.loss.mat,
+    main = c("Binary Classification: ", "SAheart"),
+    xlab = "mean loss value",
+    legend = (rownames(test.loss.mat)),
+    beside = TRUE
+  )
+}
+
+model.list <- LinearModelL1CV(
+  X.mat = X.mat,
+  y.vec = y.vec,
+  # fold.vec = sample(rep(1:n.folds, l = length(y.vec))),
+  n.folds = 5L,
+  penalty.vec = penalty.vec,
+  step.size = step.size
+)
+```
+
+Comment on difference in accuracy:
+L1 Linear model is better than baseline
+
+### Train/validation loss plot
+```{r, fig.show='hold', fig.width= 6, fig.height= 6}
+matplot(
+  x = penalty.vec,
+  y = cbind(
+    model.list$mean.validation.loss.vec,
+    model.list$mean.train.loss.vec
+  ),
+  xlab = "penalties",
+  ylab = "mean loss value",
+  type = "l",
+  lty = 1:2,
+  pch = 15,
+  col = c(17)
+)
+
+
+dot.x <- model.list$selected.penalty
+dot.y <- model.list$mean.validation.loss.vec[which(penalty.vec == dot.x)]
+
+matpoints(x = dot.x,
+          y = dot.y,
+          col = 2,
+          pch = 19)
+legend(
+  x = 0,
+  y = max(
+    cbind(
+      model.list$mean.validation.loss.vec,
+      model.list$mean.train.loss.vec
+    )
+  ),
+  c("Validation loss", "Train loss"),
+  lty = 1:2,
+  xjust = 0,
+  yjust = 1
+)
+```
+
+What are the optimal regularization parameters?
+Answer: penalty = `r dot.x`
+
+
+
+
+
+## Data set 3: zip.train
+```{r}
+data.name = 3
+data.set <- data.list[[data.name]]
+
+test.loss.mat <- matrix(0, nrow = n.folds, ncol = 2)
+step.size <- data.set$step.size
+
+penalty.vec = seq(data.set$lmax, data.set$lmax / 100, length.out = 100)
+
+
+#Check data type here:
+
+set.seed(1)
+
+fold.vec <- sample(rep(1:n.folds, l = length(data.set$labels)))
+
+for (i.fold in (1:n.folds)) {
+  train.index <- fold.vec != i.fold
+  test.index <- fold.vec == i.fold
+
+  X.mat <- data.set$features
+  y.vec <- data.set$labels
+
+  X.train <- data.set$features[train.index,]
+  y.train <- data.set$labels[train.index]
+  X.test <- data.set$features[test.index,]
+  y.test <- data.set$labels[test.index]
+
+  result.list <- LinearModelL1CV(
+    X.mat = X.train,
+    y.vec = y.train,
+    # fold.vec = sample(rep(1:n.folds, l = length(y.vec))),
+    n.folds = 5L,
+    penalty.vec = penalty.vec,
+    step.size = step.size
+  )
+
+  if (data.set$is.01) {
+    # binary data
+    L1.predict <-
+      ifelse(result.list$predict(X.test) > 0.5, 1, 0)
+    L1.loss <- mean(ifelse(L1.predict == y.test, 0, 1))
+
+    baseline.predict <- ifelse(mean(y.test) > 0.5, 1, 0)
+    baseline.loss <- mean(ifelse(baseline.predict == y.test, 0, 1))
+
+    } else{
+    # regression data
+    L1.predict <- result.list$predict(X.test)
+    L1.loss <- mean((L1.predict - y.test) ^ 2)
+
+    baseline.predict <- mean(y.test)
+    baseline.loss <- mean((baseline.predict - y.test) ^ 2)
+  }
+
+  test.loss.mat[i.fold,] = c(L1.loss, baseline.loss)
+}
+
+colnames(test.loss.mat) <- c("Linear Model L1", "Baseline")
+
+```
+
+### Matrix of loss values
+```{r, fig.show='hold', fig.width= 6, fig.height= 6}
+# plot result
+if (!data.set$is.01) {
+  barplot(
+    test.loss.mat,
+    main = c("Square Regression: ", "zip.train"),
+    xlab = "mean loss value",
+    legend = (rownames(test.loss.mat)),
+    beside = TRUE
+  )
+} else{
+  barplot(
+    test.loss.mat,
+    main = c("Binary Classification: ", "zip.train"),
+    xlab = "mean loss value",
+    legend = (rownames(test.loss.mat)),
+    beside = TRUE
+  )
+}
+
+model.list <- LinearModelL1CV(
+  X.mat = X.mat,
+  y.vec = y.vec,
+  # fold.vec = sample(rep(1:n.folds, l = length(y.vec))),
+  n.folds = 5L,
+  penalty.vec = penalty.vec,
+  step.size = step.size
+)
+```
+
+Comment on difference in accuracy:
+L1 Linear model is better than baseline
+
+### Train/validation loss plot
+```{r, fig.show='hold', fig.width= 6, fig.height= 6}
+matplot(
+  x = penalty.vec,
+  y = cbind(
+    model.list$mean.validation.loss.vec,
+    model.list$mean.train.loss.vec
+  ),
+  xlab = "penalties",
+  ylab = "mean loss value",
+  type = "l",
+  lty = 1:2,
+  pch = 15,
+  col = c(17)
+)
+
+
+dot.x <- model.list$selected.penalty
+dot.y <- model.list$mean.validation.loss.vec[which(penalty.vec == dot.x)]
+
+matpoints(x = dot.x,
+          y = dot.y,
+          col = 2,
+          pch = 19)
+legend(
+  x = 0,
+  y = max(
+    cbind(
+      model.list$mean.validation.loss.vec,
+      model.list$mean.train.loss.vec
+    )
+  ),
+  c("Validation loss", "Train loss"),
+  lty = 1:2,
+  xjust = 0,
+  yjust = 1
+)
+```
+
+What are the optimal regularization parameters?
+Answer: penalty = `r dot.x`
+
+
+
+
+
+## Data set 4: prostate
+```{r}
+data.name = 4
+data.set <- data.list[[data.name]]
+
+test.loss.mat <- matrix(0, nrow = n.folds, ncol = 2)
+step.size <- data.set$step.size
+
+penalty.vec = seq(data.set$lmax, data.set$lmax / 100, length.out = 100)
+
+
+#Check data type here:
+
+set.seed(1)
+
+fold.vec <- sample(rep(1:n.folds, l = length(data.set$labels)))
+
+for (i.fold in (1:n.folds)) {
+  train.index <- fold.vec != i.fold
+  test.index <- fold.vec == i.fold
+
+  X.mat <- data.set$features
+  y.vec <- data.set$labels
+
+  X.train <- data.set$features[train.index,]
+  y.train <- data.set$labels[train.index]
+  X.test <- data.set$features[test.index,]
+  y.test <- data.set$labels[test.index]
+
+  result.list <- LinearModelL1CV(
+    X.mat = X.train,
+    y.vec = y.train,
+    # fold.vec = sample(rep(1:n.folds, l = length(y.vec))),
+    n.folds = 5L,
+    penalty.vec = penalty.vec,
+    step.size = step.size
+  )
+
+  if (data.set$is.01) {
+    # binary data
+    L1.predict <-
+      ifelse(result.list$predict(X.test) > 0.5, 1, 0)
+    L1.loss <- mean(ifelse(L1.predict == y.test, 0, 1))
+
+    baseline.predict <- ifelse(mean(y.test) > 0.5, 1, 0)
+    baseline.loss <- mean(ifelse(baseline.predict == y.test, 0, 1))
+
+    } else{
+    # regression data
+    L1.predict <- result.list$predict(X.test)
+    L1.loss <- mean((L1.predict - y.test) ^ 2)
+
+    baseline.predict <- mean(y.test)
+    baseline.loss <- mean((baseline.predict - y.test) ^ 2)
+  }
+
+  test.loss.mat[i.fold,] = c(L1.loss, baseline.loss)
+}
+
+colnames(test.loss.mat) <- c("Linear Model L1", "Baseline")
+
+```
+
+### Matrix of loss values
+```{r, fig.show='hold', fig.width= 6, fig.height= 6}
+# plot result
+if (!data.set$is.01) {
+  barplot(
+    test.loss.mat,
+    main = c("Square Regression: ", "prostate"),
+    xlab = "mean loss value",
+    legend = (rownames(test.loss.mat)),
+    beside = TRUE
+  )
+} else{
+  barplot(
+    test.loss.mat,
+    main = c("Binary Classification: ", "prostate"),
+    xlab = "mean loss value",
+    legend = (rownames(test.loss.mat)),
+    beside = TRUE
+  )
+}
+
+model.list <- LinearModelL1CV(
+  X.mat = X.mat,
+  y.vec = y.vec,
+  # fold.vec = sample(rep(1:n.folds, l = length(y.vec))),
+  n.folds = 5L,
+  penalty.vec = penalty.vec,
+  step.size = step.size
+)
+```
+
+Comment on difference in accuracy:
+L1 Linear model is better than baseline
+
+### Train/validation loss plot
+```{r, fig.show='hold', fig.width= 6, fig.height= 6}
+matplot(
+  x = penalty.vec,
+  y = cbind(
+    model.list$mean.validation.loss.vec,
+    model.list$mean.train.loss.vec
+  ),
+  xlab = "penalties",
+  ylab = "mean loss value",
+  type = "l",
+  lty = 1:2,
+  pch = 15,
+  col = c(17)
+)
+
+
+dot.x <- model.list$selected.penalty
+dot.y <- model.list$mean.validation.loss.vec[which(penalty.vec == dot.x)]
+
+matpoints(x = dot.x,
+          y = dot.y,
+          col = 2,
+          pch = 19)
+legend(
+  x = 0,
+  y = max(
+    cbind(
+      model.list$mean.validation.loss.vec,
+      model.list$mean.train.loss.vec
+    )
+  ),
+  c("Validation loss", "Train loss"),
+  lty = 1:2,
+  xjust = 0,
+  yjust = 1
+)
+```
+
+What are the optimal regularization parameters?
+Answer: penalty = `r dot.x`
+
+
+
+
+
+## Data set 5: ozone
+```{r}
+data.name = 5
+data.set <- data.list[[data.name]]
+  
+test.loss.mat <- matrix(0, nrow = n.folds, ncol = 2)
+step.size <- data.set$step.size
+
+penalty.vec = seq(data.set$lmax, data.set$lmax / 100, length.out = 100)
+
+
+#Check data type here:
+
+set.seed(1)
+
+fold.vec <- sample(rep(1:n.folds, l = length(data.set$labels)))
+
+for (i.fold in (1:n.folds)) {
+  train.index <- fold.vec != i.fold
+  test.index <- fold.vec == i.fold
+  
+  X.mat <- data.set$features
+  y.vec <- data.set$labels
+  
+  X.train <- data.set$features[train.index,]
+  y.train <- data.set$labels[train.index]
+  X.test <- data.set$features[test.index,]
+  y.test <- data.set$labels[test.index]
+  
+  result.list <- LinearModelL1CV(
+    X.mat = X.train,
+    y.vec = y.train,
+    # fold.vec = sample(rep(1:n.folds, l = length(y.vec))),
+    n.folds = 5L,
+    penalty.vec = penalty.vec,
+    step.size = step.size
+  )
+  
+  if (data.set$is.01) {
+    # binary data
+    L1.predict <-
+      ifelse(result.list$predict(X.test) > 0.5, 1, 0)
+    L1.loss <- mean(ifelse(L1.predict == y.test, 0, 1))
+    
+    baseline.predict <- ifelse(mean(y.test) > 0.5, 1, 0)
+    baseline.loss <- mean(ifelse(baseline.predict == y.test, 0, 1))
+    
+    } else{
+    # regression data
+    L1.predict <- result.list$predict(X.test)
+    L1.loss <- mean((L1.predict - y.test) ^ 2)
+    
+    baseline.predict <- mean(y.test)
+    baseline.loss <- mean((baseline.predict - y.test) ^ 2)
+  }
+  
+  test.loss.mat[i.fold,] = c(L1.loss, baseline.loss)
+}
+
+colnames(test.loss.mat) <- c("Linear Model L1", "Baseline")
+
+
+```
+
+### Matrix of loss values
+```{r, fig.show='hold', fig.width= 6, fig.height= 6}
+# plot result
+if (!data.set$is.01) {
+  barplot(
+    test.loss.mat,
+    main = c("Square Regression: ", "ozone"),
+    xlab = "mean loss value",
+    legend = (rownames(test.loss.mat)),
+    beside = TRUE
+  )
+} else{
+  barplot(
+    test.loss.mat,
+    main = c("Binary Classification: ", "ozone"),
+    xlab = "mean loss value",
+    legend = (rownames(test.loss.mat)),
+    beside = TRUE
+  )
+}
+  
+model.list <- LinearModelL1CV(
+  X.mat = X.mat,
+  y.vec = y.vec,
+  # fold.vec = sample(rep(1:n.folds, l = length(y.vec))),
+  n.folds = 5L,
+  penalty.vec = penalty.vec,
+  step.size = step.size
+)
+```
+
+Comment on difference in accuracy:
+L1 Linear model is better than baseline
+
+### Train/validation loss plot
+```{r, fig.show='hold', fig.width= 6, fig.height= 6}
+matplot(
+  x = penalty.vec,
+  y = cbind(
+    model.list$mean.validation.loss.vec,
+    model.list$mean.train.loss.vec
+  ),
+  xlab = "penalties",
+  ylab = "mean loss value",
+  type = "l",
+  lty = 1:2,
+  pch = 15,
+  col = c(17)
+)
+
+
+dot.x <- model.list$selected.penalty
+dot.y <- model.list$mean.validation.loss.vec[which(penalty.vec == dot.x)]
+
+matpoints(x = dot.x,
+          y = dot.y,
+          col = 2,
+          pch = 19)
+legend(
+  x = 0,
+  y = max(
+    cbind(
+      model.list$mean.validation.loss.vec,
+      model.list$mean.train.loss.vec
+    )
+  ),
+  c("Validation loss", "Train loss"),
+  lty = 1:2,
+  xjust = 0,
+  yjust = 1
+)
+```
+
+What are the optimal regularization parameters?
+Answer: penalty = `r dot.x`
+
+
+## End of the report
