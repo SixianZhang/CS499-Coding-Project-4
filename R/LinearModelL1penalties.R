@@ -11,7 +11,7 @@
 #' @export
 #'
 #' @examples
-#' library(L1LinearModel)
+#' library(LinearModelL1)
 #' data(prostate, package = "ElemStatLearn")
 #' prostate <- list(features = as.matrix(prostate[, 1:8]), labels = prostate$lpsa, is.01 = FALSE)
 #' data.set <- prostate

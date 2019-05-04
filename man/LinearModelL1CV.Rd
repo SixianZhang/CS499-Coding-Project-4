@@ -5,8 +5,8 @@
 \title{Linear Model with L1 regularization using cross validation}
 \usage{
 LinearModelL1CV(X.mat, y.vec, fold.vec = sample(rep(1:n.folds, l =
-  length(y.vec))), n.folds = 5L, penalty.vec = seq(0.3, 0, by = -0.03),
-  step.size = 0.01)
+  length(y.vec))), n.folds = 5L, penalty.vec = seq(0.5, 0, length.out =
+  100), step.size = 0.01)
 }
 \arguments{
 \item{X.mat}{a numeric feature matrix of size n x p}
@@ -15,12 +15,24 @@ LinearModelL1CV(X.mat, y.vec, fold.vec = sample(rep(1:n.folds, l =
 
 \item{fold.vec}{a numeric vector of lenght nrow(X.mat)}
 
-\item{n.folds}{an integer greater than 1, which indicate number of folds, default is 5}
+\item{n.folds}{a positive integer indicate number of folds, default is 5L}
 
-\item{penalty.vec}{a non-negative numeric decreasing penalty vector, default is 1 to 0.1 with 0.1 decreament}
+\item{penalty.vec}{a non-negative numeric decreasing penalty vector, default is seq(0.5, 0, length.out = 100)}
 
-\item{step.size}{a positive numeric value, default is 0.1}
+\item{step.size}{a positive numeric value, default is 0.01}
+}
+\value{
+a list with bunch of information, mean.validation.loss.vec, mean.train.loss.vec, penalty.vec, selected.penalty, weight.vec, predict function
 }
 \description{
 This algorithm splits the data into several folds and apply LinealModelL1penalites to each fold
+}
+\examples{
+library(LinearModelL1)
+data(prostate, package = "ElemStatLearn")
+prostate <- list(features = as.matrix(prostate[, 1:8]), labels = prostate$lpsa, is.01 = FALSE)
+data.set <- prostate
+X.mat <- data.set$features
+y.vec <- data.set$labels
+LinearModelL1CV(X.mat, y.vec)
 }

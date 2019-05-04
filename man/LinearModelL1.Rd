@@ -4,12 +4,35 @@
 \alias{LinearModelL1}
 \title{Linear Model algorithm with L1 regularization}
 \usage{
-LinearModelL1(X.scaled.mat, y.vec, penalty, opt.thresh, initial.weight.vec,
-  step.size)
+LinearModelL1(X.scaled.mat, y.vec, penalty = 0.5, opt.thresh = 0.5,
+  initial.weight.vec = rnorm(ncol(X.scaled.mat) + 1), step.size = 0.01)
 }
 \arguments{
-\item{step.size}{}
+\item{X.scaled.mat}{the scaled trainning input matrix (n x p)}
+
+\item{y.vec}{the training training labels with size (n x 1)}
+
+\item{penalty}{a non-neagtive numeric scalar, default value 0.5, usually does not work :)}
+
+\item{opt.thresh}{a numeric scalar, default value as 0.5}
+
+\item{initial.weight.vec}{initial weight with size (p+1 x 1), default value as a normal distribution warm up.}
+
+\item{step.size}{a numeric scalar, default value as 0.01}
+}
+\value{
+optimal weight vector (with p+1 elements, first element is the bias/intercept b)
+ for the given penalty parameter.
 }
 \description{
 This algorithm takes one penalty value
+}
+\examples{
+library(LinearModelL1)
+data(prostate, package = "ElemStatLearn")
+prostate <- list(features = as.matrix(prostate[, 1:8]), labels = prostate$lpsa, is.01 = FALSE)
+data.set <- prostate
+X.mat <- data.set$features
+y.vec <- data.set$labels
+LinearModelL1(X.mat,y.vec,0.2,0.1,rnorm(ncol(X.mat)+1),0.1)
 }
