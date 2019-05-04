@@ -2,17 +2,24 @@
 #'
 #' This algorithm takes the penalty vector as input and iterate through each value in the vector using LinearModelL1
 #'
-#' @param X.mat
-#' @param y.vec
-#' @param penalty.vec
-#' @param step.size
+#' @param X.mat unscaled training input matrix, with size n x p 
+#' @param y.vec correspond training input matrix, with size n x 1
+#' @param penalty.vec a vector with descending numeric number, default as seq(0.5, 0, length.out = 100)
+#' @param step.size a scalar with numeric value, default as 0.01
 #'
-#' @return
+#' @return W.mat matrix, with the size ((feaure.size + 1)  x  n.step.size.length)
 #' @export
 #'
 #' @examples
+#' library(L1LinearModel)
+#' data(prostate, package = "ElemStatLearn")
+#' prostate <- list(features = as.matrix(prostate[, 1:8]), labels = prostate$lpsa, is.01 = FALSE)
+#' data.set <- prostate
+#' X.mat <- data.set$features
+#' y.vec <- data.set$labels
+#' LinearModelL1penalties(X.mat, y.vec, seq(0.4, 0.01, -0.01), 0.01)
 LinearModelL1penalties <-
-  function(X.mat, y.vec, penalty.vec=seq(0.3, 0, by = -0.03), step.size=0.01) {
+  function(X.mat, y.vec, penalty.vec=seq(0.5, 0, length.out = 100), step.size=0.01) {
     # Check type and dimension
     if (!all(is.numeric(X.mat), is.matrix(X.mat))) {
       stop("X.mat must be a numeric matrix")
@@ -38,11 +45,12 @@ LinearModelL1penalties <-
       stop("penalty.vec must be a non-negative decreasing numeric vector")
     }
     
-    # if (!all(is.numeric(opt.thresh),
-    #          length(opt.thresh) == 1,
-    #          opt.thresh > 0)) {
-    #   stop("opt.thresh must be a positive numeric scalar")
-    # }
+    if(!all(is.numeric(step.size),
+            length(step.size) == 1,
+            step.size > 0
+    )){
+      stop("step.size must be a positive number")
+    }
     
     is.binary <- ifelse((all(y.vec %in% c(0, 1))), TRUE, FALSE)
     

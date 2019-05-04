@@ -4,7 +4,8 @@
 \alias{LinearModelL1penalties}
 \title{Linear Model with L1 regularization}
 \usage{
-LinearModelL1penalties(X.mat, y.vec, penalty.vec, step.size)
+LinearModelL1penalties(X.mat, y.vec, penalty.vec = seq(0.3, 0, by =
+  -0.03), step.size = 0.01)
 }
 \arguments{
 \item{step.size}{}
