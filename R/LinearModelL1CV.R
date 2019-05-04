@@ -19,7 +19,7 @@ LinearModelL1CV <-
            fold.vec = sample(rep(1:n.folds, l = length(y.vec))),
            n.folds = 5L,
            penalty.vec = seq(0.3, 0, by = -0.03),
-           step.size = 0.1) {
+           step.size = 0.01) {
     # Check type and dimension
     if (!all(is.numeric(X.mat), is.matrix(X.mat))) {
       stop("X.mat must be a numeric matrix")
@@ -95,8 +95,10 @@ LinearModelL1CV <-
     mean.validation.loss.vec <- colMeans(validation.loss.mat)
     selected.penalty.index <- which.min(mean.validation.loss.vec)
     
+    W.opt <- LinearModelL1penalties(X.mat, y.vec, penalty.vec)
+    
     weight.vec <- 
-      LinearModelL1penalties(X.mat, y.vec, penalty.vec)[, selected.penalty.index]
+      W.opt[, selected.penalty.index]
     
     predict <- function(testX.mat) {
       # Check type and dimension

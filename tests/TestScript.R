@@ -15,27 +15,27 @@ data.list <- list(
   #   labels = ifelse(spam$spam == "spam", 1, 0),
   #   is.01 = TRUE
   # ),
-
-  # SAheart = list(
-  #   features = as.matrix(SAheart[, c(1:4,6:9)]),
-  #   labels = SAheart$chd,
-  #   is.01 = TRUE
-  # ),
+# 
+#   SAheart = list(
+#     features = as.matrix(SAheart[, c(1:4,6:9)]),
+#     labels = SAheart$chd,
+#     is.01 = TRUE
+#   ).
   # 
-  # zip.train = list(
-  #   features = as.matrix(zip.train[, -1]),
-  #   labels = zip.train[, 1],
-  #   is.01 = TRUE
-  # ),
+  zip.train = list(
+    features = as.matrix(zip.train[, -1]),
+    labels = zip.train[, 1],
+    is.01 = TRUE
+  )
   # 
   # 
   # prostate = list(features = as.matrix(prostate[, 1:8]),
   #                 labels = prostate$lpsa,
   #                 is.01 = FALSE),
 
-  ozone = list(features = as.matrix(ozone[,-1]),
-               labels = ozone[, 1],
-               is.01 = FALSE)
+  # ozone = list(features = as.matrix(ozone[,-1]),
+  #              labels = ozone[, 1],
+  #              is.01 = FALSE)
 )
 
 n.folds <- 4L
@@ -50,7 +50,7 @@ for (data.name in names(data.list)) {
 
   fold.vec <- sample(rep(1:n.folds, l = length(data.set$labels)))
   
-  penalty.vec <- seq(1.5, 0.001, length.out=100)
+  penalty.vec <- seq(0.5, 0.0001, length.out = 100)
 
   for (i.fold in (1:n.folds)) {
     train.index <- fold.vec != i.fold
@@ -63,13 +63,13 @@ for (data.name in names(data.list)) {
     
     if (data.set$is.01) {
       L1.list <-
-        LinearModelL1CV(x.train, y.train, n.folds=5L, penalty.vec=penalty.vec,step.size=0.1)
+        LinearModelL1CV(x.train, y.train, n.folds=5L, penalty.vec=penalty.vec,step.size=0.01)
       L1.predict <- ifelse(L1.list$predict(x.test) > 0.5, 1, 0)
       baseline.predict <- ifelse(mean(y.test) > 0.5 , 1, 0)
       # baseline.predict <- mean(y.test)
       
     } else{
-      L1.list <- LinearModelL1CV(x.train, y.train, n.folds=5L, penalty.vec=penalty.vec,step.size=0.1)
+      L1.list <- LinearModelL1CV(x.train, y.train, n.folds=5L, penalty.vec=penalty.vec,step.size=0.01)
       L1.predict <- L1.list$predict(x.test)
       baseline.predict <- mean(y.test)
     }
@@ -106,10 +106,10 @@ for (data.name in names(data.list)) {
   # Run CV for whole dataset
   if(data.set$is.01){
     # Binary
-    model.list <- LinearModelL1CV(data.set$features, data.set$labels, n.folds=5L, penalty.vec=penalty.vec,step.size=0.1)
+    model.list <- LinearModelL1CV(data.set$features, data.set$labels, n.folds=5L, penalty.vec=penalty.vec,step.size=0.01)
   }else{
     # Regression
-    model.list <- LinearModelL1CV(data.set$features, data.set$labels, n.folds=5L, penalty.vec=penalty.vec,step.size=0.1)
+    model.list <- LinearModelL1CV(data.set$features, data.set$labels, n.folds=5L, penalty.vec=penalty.vec,step.size=0.01)
   }
   
   dot.x <- model.list$selected.penalty
@@ -117,7 +117,7 @@ for (data.name in names(data.list)) {
   
   matplot(
     y = cbind(model.list$mean.validation.loss.vec, model.list$mean.train.loss.vec),
-    x = as.matrix(log10(penalty.vec)),
+    x = as.matrix(penalty.vec),
     xlab = "log_10(penalty)",
     ylab = "mean loss value",
     type = "l",

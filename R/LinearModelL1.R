@@ -76,7 +76,7 @@ LinearModelL1 <-
     
     n.features <- ncol(X.scaled.mat)   # p 
     n.trains <- nrow(X.scaled.mat)  # n 
-    max.iter <- 30L
+    max.iter <- 50L
     X.train <- cbind(1,X.scaled.mat) # n x (p+1)    
     # w.vec <- initial.weight.vec[-1] # p x 1
     # intercept <- initial.weight.vec[1]
@@ -114,24 +114,25 @@ LinearModelL1 <-
                abs(gradient - sign(w) * penalty))
     }
     
-    iter <-  0
+    iter <- 0
     while (1) {
       while (loss(iter.learn(initial.weight.vec, step.size/2))
              < loss(iter.learn(initial.weight.vec, step.size))){
         step.size <- step.size / step.factor
       }
       
-      while(loss(iter.learn(initial.weight.vec, step.size*2))
+      while (loss(iter.learn(initial.weight.vec, step.size*2))
             < loss(iter.learn(initial.weight.vec, step.size))){
         step.size <- step.size * step.factor
       }
       
       lst.n <- iter.learn(initial.weight.vec, step.size)
       initial.weight.vec <- lst.n$W.vec
-      loss(lst.n)
+      
       criterion <- c(lst.n$gradient.vec[1],
                      norm.gradient(lst.n$gradient.vec[-1], initial.weight.vec[-1]))
       iter <- iter + 1
+      
       if ((norm(as.matrix(abs(criterion)),'2') < opt.thresh) || (iter >= max.iter))
         break;
     }
