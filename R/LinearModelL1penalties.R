@@ -38,11 +38,12 @@ LinearModelL1penalties <-
       stop("penalty.vec must be a non-negative decreasing numeric vector")
     }
     
-    # if (!all(is.numeric(opt.thresh),
-    #          length(opt.thresh) == 1,
-    #          opt.thresh > 0)) {
-    #   stop("opt.thresh must be a positive numeric scalar")
-    # }
+    if(!all(is.numeric(step.size),
+            length(step.size) == 1,
+            step.size > 0
+    )){
+      stop("step.size must be a positive number")
+    }
     
     is.binary <- ifelse((all(y.vec %in% c(0, 1))), TRUE, FALSE)
     
