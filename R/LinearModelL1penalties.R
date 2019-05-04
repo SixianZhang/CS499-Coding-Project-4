@@ -37,10 +37,12 @@ LinearModelL1penalties <-
     )) {
       stop("penalty.vec must be a non-negative decreasing numeric vector")
     }
-
-    if (!all(length(step.size) == 1, is.numeric(step.size))){
-      stop("step.size must be a numeric scalar.")
-    }
+    
+    # if (!all(is.numeric(opt.thresh),
+    #          length(opt.thresh) == 1,
+    #          opt.thresh > 0)) {
+    #   stop("opt.thresh must be a positive numeric scalar")
+    # }
     
     is.binary <- ifelse((all(y.vec %in% c(0, 1))), TRUE, FALSE)
     
@@ -62,35 +64,20 @@ LinearModelL1penalties <-
       t((t(X.mat) - feature.mean.vec) / feature.sd.vec)
     
     initial.weight.vec <- rnorm(n.features + 1)
-
-    # lambda.max <- function(intercept){
-    #   if (is.binary)
-    #     max(abs(c(t(rep(1,n.train)) %*% (y.vec / (1 + exp(y.vec *
-    #      (rep(1,n.train) * intercept)))), t(X.scaled.mat) %*% (y.vec /
-    #       (1 + exp(y.vec * (rep(1,n.train) * intercept)))))))
-    #   else
-    #     max(abs(c(-t(X.scaled.mat) %*% rep(1,n.train) * intercept - y.vec, -t(rep(1,n.train))
-    #      %*% (rep(1,n.train) * intercept - y.vec))))
-    # }
-
-
-    # if(penalty.vec == NULL){
-    #   penalty.vec <- seq(lambda.max(initial.weight.vec[1]), 0, by=-0.05)
-    # }
-
-    n.penalties <- length(penalty.vec)
     
     W.mat <- matrix(0, nrow = n.features + 1, ncol = n.penalties)
     # W.temp.mat <- W.mat
-    opt.thresh <- 0.01
+    
+    opt.thresh = 0.01;
+    
     for (i.penalty in c(1:n.penalties)) {
       W.mat[, i.penalty] <-
-        LinearModelL1(X.scaled.mat,
-                      y.vec,
-                      penalty.vec[i.penalty],
-                      opt.thresh,
-                      initial.weight.vec,
-                      step.size)
+        LinearModelL1(X.scaled.mat = X.scaled.mat,
+                      y.vec = y.vec,
+                      penalty = penalty.vec[i.penalty],
+                      opt.thresh = opt.thresh,
+                      initial.weight.vec = initial.weight.vec,
+                      step.size = step.size)
       
       initial.weight.vec <-
         W.mat[, i.penalty] 
