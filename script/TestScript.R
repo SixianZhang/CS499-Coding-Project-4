@@ -1,5 +1,4 @@
-library(ElemStatLearn)
-library(NeuralNetwork)
+library(LinearModelL1)
 
 data(spam, package = "ElemStatLearn")
 data(SAheart, package = "ElemStatLearn")
@@ -52,8 +51,6 @@ data.list <- list(
 )
 
 n.folds <- 5L
-n.hidden.units <- 10L
-max.iterations <- 500L
 
 for (data.name in names(data.list)) {
   data.set <- data.list[[data.name]]
