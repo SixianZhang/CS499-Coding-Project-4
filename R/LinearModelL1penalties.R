@@ -11,7 +11,7 @@
 #' @export
 #'
 #' @examples
-#' library(L1LinearModel)
+#' library(LinearModelL1)
 #' data(prostate, package = "ElemStatLearn")
 #' prostate <- list(features = as.matrix(prostate[, 1:8]), labels = prostate$lpsa, is.01 = FALSE)
 #' data.set <- prostate
@@ -57,6 +57,7 @@ LinearModelL1penalties <-
     # Initializing
     n.train <- nrow(X.mat)
     n.features <- ncol(X.mat) # features is p here
+    n.penalties <- length(penalty.vec)
     
     # Scale X.mat with m = 0, sd = 1
     feature.mean.vec <- colMeans(X.mat)

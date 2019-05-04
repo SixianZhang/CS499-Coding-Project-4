@@ -13,7 +13,7 @@
 #' @export
 #'
 #' @examples 
-#' library(L1LinearModel)
+#' library(LinearModelL1)
 #' data(prostate, package = "ElemStatLearn")
 #' prostate <- list(features = as.matrix(prostate[, 1:8]), labels = prostate$lpsa, is.01 = FALSE)
 #' data.set <- prostate
@@ -48,8 +48,9 @@ LinearModelL1CV <-
             is.integer(n.folds),
             length(n.folds) == 1,
             n.folds > 1,
-            n.folds == length(fold.vec))){
-      stop("n.folds must be an interger greater than 1 and equal to the length of fold.vec")
+            n.folds == length(unique(fold.vec)))){
+      stop("n.folds must be an interger greater than 1 and equal to the number of unique element of fold.vec")
+
     }
     
     if (!all(
