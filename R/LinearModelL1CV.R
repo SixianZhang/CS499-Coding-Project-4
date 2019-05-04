@@ -47,6 +47,10 @@ LinearModelL1CV <-
       stop("penalty.vec must be a non-negative decreasing numeric vector")
     }
     
+    sigmoid <- function(x) {
+      return(1 /(1 + exp(-x)))
+    }
+    
     # Initiallize
     is.binary <- ifelse((all(y.vec %in% c(0, 1))), TRUE, FALSE)
     
@@ -59,22 +63,24 @@ LinearModelL1CV <-
     # Iterating folds
     for (i.fold in seq(n.folds)) {
       train.vec <- (fold.vec != i.fold)
+   
+      W.mat <-
+        LinearModelL1penalties(X.mat[train.vec,], y.vec[train.vec], penalty.vec, step.size)
       
       set.list <- list(train = train.vec, validation = (!train.vec))
       for (set.name in names(set.list)) {
         index <- get(set.name, set.list)
-        
-        W.mat <-
-          LinearModelL1penalties(X.mat, y.vec, penalty.vec, step.size)
-        predict <- cbind(1, X.mat[index,]) %*% W.mat
-        
+         
         if (is.binary) {
           # Do 0-1 loss
+          predict <- sigmoid(cbind(1, X.mat[index,]) %*% W.mat)
+          
           predict <- ifelse(predict > 0.5, 1, 0)
           loss.vec <-
             colMeans((ifelse(predict == y.vec[get(set.name, set.list)], 0, 1)))
         } else{
           # Do square loss
+          predict <- cbind(1, X.mat[index,]) %*% W.mat
           loss.vec <-
             colMeans((predict - y.vec[get(set.name, set.list)]) ^ 2)
         }
@@ -90,8 +96,10 @@ LinearModelL1CV <-
     mean.validation.loss.vec <- colMeans(validation.loss.mat)
     selected.penalty.index <- which.min(mean.validation.loss.vec)
     
-    weight.vec <- 
-      LinearModelL1penalties(X.mat, y.vec, penalty.vec, step.size)[, selected.penalty.index]
+    W.opt <- 
+      LinearModelL1penalties(X.mat, y.vec, penalty.vec, step.size)
+    
+    weight.vec <- W.opt[, selected.penalty.index]
     
     predict <- function(testX.mat) {
       # Check type and dimension
