@@ -165,27 +165,5 @@ LinearModelL1 <-
       
     }
     
-    iter <- 0
-    while (1) {
-      while (loss(iter.learn(initial.weight.vec, step.size/2))
-             < loss(iter.learn(initial.weight.vec, step.size))){
-        step.size <- step.size / step.factor
-      }
-      
-      while (loss(iter.learn(initial.weight.vec, step.size*2))
-            < loss(iter.learn(initial.weight.vec, step.size))){
-        step.size <- step.size * step.factor
-      }
-      
-      lst.n <- iter.learn(initial.weight.vec, step.size)
-      initial.weight.vec <- lst.n$W.vec
-      
-      criterion <- c(lst.n$gradient.vec[1],
-                     norm.gradient(lst.n$gradient.vec[-1], initial.weight.vec[-1]))
-      iter <- iter + 1
-      
-      if ((norm(as.matrix(abs(criterion)),'2') < opt.thresh) || (iter >= max.iter))
-        break;
-    }
-    return(initial.weight.vec)
+    return(w.vec)
   }

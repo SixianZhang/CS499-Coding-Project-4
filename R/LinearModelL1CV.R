@@ -5,7 +5,7 @@
 #' @param X.mat a numeric feature matrix of size n x p
 #' @param y.vec a numeric labe vector of length nrow(X.mat)
 #' @param fold.vec a numeric vector of lenght nrow(X.mat)
-#' @param n.folds a positive integer indicate number of folds, default is 5
+#' @param n.folds an integer greater than 1, which indicate number of folds, default is 5
 #' @param penalty.vec a non-negative numeric decreasing penalty vector, default is 1 to 0.1 with 0.1 decreament
 #' @param step.size a positive numeric value, default is 0.1
 #'
@@ -37,6 +37,14 @@ LinearModelL1CV <-
       stop("fold.vec must be a numeric vector of length nrow(X.mat)")
     }
     
+    if(!all(is.numeric(n.folds),
+            is.integer(n.folds),
+            length(n.folds) == 1,
+            n.folds > 1,
+            n.folds == length(unique(fold.vec)))){
+      stop("n.folds must be an interger greater than 1 and equal to the number of unique element of fold.vec")
+    }
+    
     if (!all(
       is.vector(penalty.vec),
       is.numeric(penalty.vec),
@@ -44,6 +52,13 @@ LinearModelL1CV <-
       diff(penalty.vec) < 0
     )) {
       stop("penalty.vec must be a non-negative decreasing numeric vector")
+    }
+    
+    if(!all(is.numeric(step.size),
+            length(step.size) == 1,
+            step.size > 0
+    )){
+      stop("step.size must be a positive number")
     }
     
     sigmoid <- function(x) {
