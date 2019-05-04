@@ -52,29 +52,51 @@ LinearModelL1 <-
     
     # inner methods
     sigmoid <- function(x) {
-      return(1 / 1 + exp(-x))
+      return(1 /(1 + exp(-x)))
     }
-
-    soft <- function(w, lambda) {
-      l <- abs(w) - lambda
+    
+    soft <- function(w, penalty) {
+      l <- abs(w) - penalty
       return(sign(w) * pos.part(l))
     }
     
-    pos.part <- function(l){
+    pos.part <- function(l) {
       ifelse(l > 0, l, 0)
     }
     
-    l1opt <- function(w.vec, d){
-      ifelse(
-        w.vec == 0,
-        pos.part(abs(d) - lambda),
-        abs(d - sign(w.vec)*lambda)
-      )
+    l1opt <- function(w.vec, d) {
+      ifelse(w.vec == 0,
+             pos.part(abs(d) - penalty),
+             abs(d - sign(w.vec) * penalty))
+    }
+    
+    
+    cost.weight <- function(w.vec) {
+      if (is.binary) {
+        pred.vec <- X.train %*% w.vec
+        loss.vec <- log(1 + exp(-pred.vec * y.vec))
+        mean(loss.vec) + penalty * sum(abs(w.vec[-1]))
+      }
+      else{
+        pred.vec <- X.train %*% w.vec
+        loss.vec <- sum((pred.vec - y.vec) ^ 2)
+        mean(loss.vec) + penalty * sum(abs(w.vec[-1]))
+      }
+    }
+    
+    cost.step <- function(step) {
+      new.w <- w.step(step)
+      cost.weight(new.w)
+    }
+    
+    w.step <- function(step) {
+      u.vec <- w.vec - step.size * w.gradient.vec
+      c(u.vec[1], soft(u.vec[-1], step.size * penalty))
     }
     
     # Initializing
     is.binary <- all(ifelse(y.vec %in% c(0, 1), TRUE, FALSE))
-    max.iteration <- 30L
+    max.iteration <- 100L
     
     if (is.binary) {
       y.vec <- ifelse(y.vec == 0, -1, 1)
@@ -82,19 +104,19 @@ LinearModelL1 <-
     
     n.features <- ncol(X.scaled.mat)
     n.trains <- nrow(X.scaled.mat)
-
-    X.train = cbind(1,X.scaled.mat)    
-    w.vec <- rnorm(n.features + 1)
+    
+    X.train = cbind(1, X.scaled.mat)
+    w.vec <- initial.weight.vec
     if (is.binary) {
       # do logistic
       w.gradient.vec <-
         -t(X.train) %*% (y.vec / (1 + exp(y.vec * (
           X.train %*% w.vec
         ))))
-    
+      
     } else{
       # do linear
-      w.gradient.vec <- t(X.train)%*%(X.train %*% w.vec - y.vec)
+      w.gradient.vec <- t(X.train) %*% (X.train %*% w.vec - y.vec)
     }
     
     w.gradient.vec <- w.gradient.vec / n.trains
@@ -104,9 +126,9 @@ LinearModelL1 <-
     
     
     # Iteration starts here
-    while (norm(abs(w.gradient.vec)) > opt.thresh &&  # <-- Change the criterion
+    while (norm(abs(w.gradient.vec)) > opt.thresh &&
+           # <-- Change the criterion
            n.iteration <= max.iteration) {
-      
       n.iteration = n.iteration + 1
       
       if (is.binary) {
@@ -116,48 +138,23 @@ LinearModelL1 <-
             X.train %*% w.vec
           ))))
         w.gradient.vec <- w.gradient.vec / n.trains
-        
-        # u.vec <- w.vec - step.size * w.gradient.vec
-        # 
-        # w.vec <- c(u.vec[1], soft(u.vec[-1], step.size * penalty))
-        
       } else{
         # do linear
-        w.gradient.vec <- t(X.train)%*%(X.train %*% w.vec - y.vec)
+        w.gradient.vec <- t(X.train) %*% (X.train %*% w.vec - y.vec)
         w.gradient.vec <- w.gradient.vec / n.trains
-        
-        # u.vec <- w.vec - step.size * w.gradient.vec
-        # 
-        # w.vec <- c(u.vec[1], soft(u.vec[-1], step.size * penalty))
       }
       
+      crit.vec <-
+        c(abs(w.gradient.vec[1]), l1opt(w.vec[-1], -w.gradient.vec[-1])) # This line why
       
+      lmax <- max(abs(w.gradient.vec[-1])) # This line why
       
-      crit.vec <- c(abs(grad.vec[1]), l1opt(w.vec[-1], -w.gradient.vec[-1])) # This line why
-      lmax <- max(abs(grad.vec[-1])) # This line why
-      
-      while(cost.step(step.size/2) < cost.step(step.size)){
-        step.size <- step.size/2
+      while (cost.step(step.size / 2) < cost.step(step.size)) {
+        step.size <- step.size / 2
       }
       
-      while(cost.step(step.size*2) < cost.step(step.size)){
-        step.size <- step.size*2
-      }
-      
-      cost.weight <- function(w.vec){
-        pred.vec <- X.int %*% w.vec
-        loss.vec <- log(1 + exp(- pred.vec * y.tilde))
-        mean(loss.vec) + lambda*sum(abs(w.vec[-1]))
-      }
-      
-      cost.step <- function(step){
-        new.w <- w.step(step)
-        cost.weight(new.w)
-      }
-      
-      w.step <- function(step){
-        u.vec <- w.vec - step.size * w.gradient.vec
-        c(u.vec[1], soft(u.vec[-1], step.size * penalty))
+      while (cost.step(step.size * 2) < cost.step(step.size)) {
+        step.size <- step.size * 2
       }
       
       w.vec <- w.step(step.size)
@@ -166,4 +163,3 @@ LinearModelL1 <-
     
     return(w.vec)
   }
-

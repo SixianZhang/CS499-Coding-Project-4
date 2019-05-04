@@ -13,36 +13,41 @@ data.list <- list(
     features = as.matrix(spam[, 1:57]),
     labels = ifelse(spam$spam == "spam", 1, 0),
     is.01 = TRUE,
-    step.size = 0.1
-  ),
-  
-  SAheart = list(
-    features = as.matrix(SAheart[, c(1:4, 6:9)]),
-    labels = SAheart$chd,
-    is.01 = TRUE,
-    step.size = 0.1
-  ),
-  
-  zip.train = list(
-    features = as.matrix(zip.train[, -1]),
-    labels = zip.train[, 1],
-    is.01 = TRUE,
-    step.size = 0.1
-  ),
-  
-  
-  prostate = list(
-    features = as.matrix(prostate[, 1:8]),
-    labels = prostate$lpsa,
-    is.01 = FALSE,
-    step.size = 0.1
-  ),
-  
-  ozone = list(
-    features = as.matrix(ozone[,-1]),
-    labels = ozone[, 1],
-    is.01 = FALSE,
-    step.size = 0.01
+    step.size = 0.1,
+    lmax = 0.3
+  # ),
+  # 
+  # SAheart = list(
+  #   features = as.matrix(SAheart[, c(1:4, 6:9)]),
+  #   labels = SAheart$chd,
+  #   is.01 = TRUE,
+  #   step.size = 0.1,
+  #   lmax = 0.2
+  # ),
+  # 
+  # zip.train = list(
+  #   features = as.matrix(zip.train[, -1]),
+  #   labels = zip.train[, 1],
+  #   is.01 = TRUE,
+  #   step.size = 0.1,
+  #   lmax = 0.5
+  # ),
+  # 
+  # 
+  # prostate = list(
+  #   features = as.matrix(prostate[, 1:8]),
+  #   labels = prostate$lpsa,
+  #   is.01 = FALSE,
+  #   step.size = 0.1,
+  #   lmax = 1
+  # ),
+  # 
+  # ozone = list(
+  #   features = as.matrix(ozone[,-1]),
+  #   labels = ozone[, 1],
+  #   is.01 = FALSE,
+  #   step.size = 0.01,
+  #   lmax = 21
   )
 )
 
@@ -56,7 +61,7 @@ for (data.name in names(data.list)) {
   test.loss.mat <- matrix(0, nrow = n.folds, ncol = 2)
   step.size <- data.set$step.size
   
-  penalty.vec = seq(1, 0.1,-0.1)
+  penalty.vec = seq(data.set$lmax, data.set$lmax / 100, length.out = 100)
   
   
   #Check data type here:
